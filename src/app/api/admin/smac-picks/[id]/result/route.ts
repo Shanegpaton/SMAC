@@ -18,10 +18,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { result, odds } = body;
-
-    // Calculate yield based on result and odds
-    const yieldValue = result === 'W' ? odds : -100;
+    const { result, yield: yieldValue } = body;
 
     const pick = await prisma.sMACPick.update({
       where: { id: params.id },

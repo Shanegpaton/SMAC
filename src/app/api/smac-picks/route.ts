@@ -14,9 +14,11 @@ export async function GET(request: Request) {
     const year = searchParams.get('year');
 
     // Build where clause
-    const where: any = { published: true };
+    const where: any = {};
     if (week && year) {
       where.weekNumber = parseInt(week);
+      where.year = parseInt(year);
+    } else if (year) {
       where.year = parseInt(year);
     }
 
@@ -51,36 +53,37 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user) {
+    if (!session?.user?.isAdmin) {
       return NextResponse.json(
-        { error: 'You must be logged in to create a pick' },
+        { error: 'Only admins can create SMAC picks' },
         { status: 401 }
       );
     }
 
-    const body = await request.json();
-    const { date, sport, game, bet, odds, smacCoins } = body;
+    const { date, sport, game, bet, odds, smacCoins, weekNumber, year } = await request.json();
 
-    // Calculate week number and year
-    const pickDate = new Date(date);
-    const weekNumber = getWeekNumber(pickDate);
-    const year = pickDate.getFullYear();
+    if (!date || !sport || !game || !bet || !odds || !smacCoins || !weekNumber || !year) {
+      return NextResponse.json(
+        { error: 'All fields are required' },
+        { status: 400 }
+      );
+    }
 
-    const pick = await prisma.sMACPick.create({
+    const newPick = await prisma.sMACPick.create({
       data: {
-        date: pickDate,
+        date: new Date(date),
         sport,
         game,
         bet,
         odds: parseFloat(odds),
         smacCoins: parseInt(smacCoins),
-        weekNumber,
-        year,
+        weekNumber: parseInt(weekNumber),
+        year: parseInt(year),
         authorId: session.user.id,
       },
     });
 
-    return NextResponse.json(pick);
+    return NextResponse.json(newPick);
   } catch (error) {
     console.error('Error creating SMAC pick:', error);
     return NextResponse.json(

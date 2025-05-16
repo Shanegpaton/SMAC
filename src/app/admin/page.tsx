@@ -40,6 +40,22 @@ interface SMACPick {
   result?: string;
   yield?: number;
   potentialYield?: number;
+  weekNumber: number;
+  year: number;
+}
+
+// Helper function to calculate yield
+function calculateYield(result: string, odds: number, stake: number): number {
+  if (result === 'W') {
+    const profit = odds > 0 
+      ? stake * (odds / 100)
+      : stake * (100 / Math.abs(odds));
+    return Number(((profit / stake) * 100).toFixed(2));
+  }
+  if (result === 'L') {
+    return -100;
+  }
+  return 0;
 }
 
 export default function AdminPage() {
@@ -59,6 +75,9 @@ export default function AdminPage() {
     bet: '',
     odds: 0,
     smacCoins: 0,
+    weekNumber: 1,
+    year: new Date().getFullYear(),
+    potentialYield: 0
   });
 
   useEffect(() => {
@@ -203,6 +222,9 @@ export default function AdminPage() {
         bet: '',
         odds: 0,
         smacCoins: 0,
+        weekNumber: 1,
+        year: new Date().getFullYear(),
+        potentialYield: 0
       });
       setIsCreatingPick(false);
     } catch (err: unknown) {
@@ -211,8 +233,11 @@ export default function AdminPage() {
     }
   };
 
-  const handleUpdateResult = async (pickId: string, result: string, odds: number) => {
+  const handleUpdateResult = async (pickId: string, result: string, odds: number, smacCoins: number) => {
     try {
+      const pickYield = calculateYield(result, odds, smacCoins);
+      console.log('Calculating yield:', { result, odds, smacCoins, pickYield });
+
       const response = await fetch(`/api/admin/smac-picks/${pickId}/result`, {
         method: 'PATCH',
         headers: {
@@ -220,7 +245,7 @@ export default function AdminPage() {
         },
         body: JSON.stringify({
           result,
-          odds,
+          yield: pickYield,
         }),
       });
 
@@ -229,13 +254,45 @@ export default function AdminPage() {
       }
 
       const updatedPick = await response.json();
-      setSmacPicks(smacPicks.map(pick => 
-        pick.id === updatedPick.id ? updatedPick : pick
-      ));
+      console.log('Updated pick:', updatedPick);
+
+      // Update the picks array with the new pick data
+      setSmacPicks(prevPicks => 
+        prevPicks.map(pick => 
+          pick.id === pickId 
+            ? { 
+                ...pick, 
+                result: result,
+                yield: pickYield 
+              }
+            : pick
+        )
+      );
     } catch (err) {
       console.error('Error updating SMAC pick result:', err);
       alert('Failed to update SMAC pick result');
     }
+  };
+
+  // Update potential yield calculation in the form
+  const handleOddsChange = (value: string) => {
+    const odds = value === '' ? 0 : parseFloat(value);
+    const smacCoins = newPick.smacCoins || 0;
+    setNewPick({ 
+      ...newPick, 
+      odds,
+      potentialYield: calculateYield('W', odds, smacCoins)
+    });
+  };
+
+  const handleSmacCoinsChange = (value: string) => {
+    const smacCoins = value === '' ? 0 : parseInt(value);
+    const odds = newPick.odds || 0;
+    setNewPick({ 
+      ...newPick, 
+      smacCoins,
+      potentialYield: calculateYield('W', odds, smacCoins)
+    });
   };
 
   if (status === 'loading') {
@@ -485,15 +542,8 @@ export default function AdminPage() {
                     <input
                       type="number"
                       step="0.01"
-                      value={newPick.odds}
-                      onChange={(e) => {
-                        const odds = parseFloat(e.target.value);
-                        setNewPick({ 
-                          ...newPick, 
-                          odds: odds,
-                          potentialYield: odds > 0 ? odds * 100 : 0
-                        });
-                      }}
+                      value={newPick.odds || ''}
+                      onChange={(e) => handleOddsChange(e.target.value)}
                       className="w-full px-3 py-2 border rounded-md"
                       required
                     />
@@ -504,17 +554,18 @@ export default function AdminPage() {
                     </label>
                     <input
                       type="number"
-                      value={newPick.smacCoins}
-                      onChange={(e) => setNewPick({ ...newPick, smacCoins: parseFloat(e.target.value) || 0 })}
+                      min="0"
+                      value={newPick.smacCoins || ''}
+                      onChange={(e) => handleSmacCoinsChange(e.target.value)}
                       className="w-full px-3 py-2 border rounded-md"
                       required
                     />
                   </div>
                 </div>
-                {newPick.odds && (
+                {newPick.odds !== 0 && newPick.smacCoins !== 0 && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-md">
                     <p className="text-sm text-gray-600">
-                      Potential Yield: {newPick.potentialYield}%
+                      Potential Yield: {newPick.potentialYield?.toFixed(2)}%
                     </p>
                   </div>
                 )}
@@ -601,13 +652,13 @@ export default function AdminPage() {
                           {!pick.result && (
                             <div className="space-x-2">
                               <button
-                                onClick={() => handleUpdateResult(pick.id, 'W', pick.odds * 100)}
+                                onClick={() => handleUpdateResult(pick.id, 'W', pick.odds, pick.smacCoins)}
                                 className="text-green-600 hover:text-green-900"
                               >
                                 Win
                               </button>
                               <button
-                                onClick={() => handleUpdateResult(pick.id, 'L', -100)}
+                                onClick={() => handleUpdateResult(pick.id, 'L', pick.odds, pick.smacCoins)}
                                 className="text-red-600 hover:text-red-900"
                               >
                                 Loss
