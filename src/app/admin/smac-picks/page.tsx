@@ -104,14 +104,14 @@ export default function AdminSMACPicks() {
     }
   };
 
-  const handleUpdateResult = async (id: string, result: string, yield: number) => {
+  const handleUpdateResult = async (id: string, result: string, yieldAmount: number) => {
     try {
-      const response = await fetch(`/api/smac-picks/${id}`, {
+      const response = await fetch(`/api/admin/smac-picks/${id}/result`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ result, yield }),
+        body: JSON.stringify({ result }),
       });
 
       if (!response.ok) {
@@ -357,13 +357,19 @@ export default function AdminSMACPicks() {
                       {!pick.result && (
                         <div className="space-x-2">
                           <button
-                            onClick={() => handleUpdateResult(pick.id, 'W', 100)}
+                            onClick={() => handleUpdateResult(pick.id, 'win', 100)}
                             className="text-green-600 hover:text-green-900"
                           >
                             Win
                           </button>
                           <button
-                            onClick={() => handleUpdateResult(pick.id, 'L', -100)}
+                            onClick={() => handleUpdateResult(pick.id, 'push', 0)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Push
+                          </button>
+                          <button
+                            onClick={() => handleUpdateResult(pick.id, 'loss', -100)}
                             className="text-red-600 hover:text-red-900"
                           >
                             Loss

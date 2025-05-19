@@ -44,6 +44,13 @@ interface SMACPick {
   year: number;
 }
 
+interface SMACCoinsDistribution {
+  id: string;
+  isActive: boolean;
+  weeklyAmount: number;
+  lastDistributed: string | null;
+}
+
 // Helper function to calculate yield
 function calculateYield(result: string, odds: number, stake: number): number {
   if (result === 'W') {
@@ -66,7 +73,7 @@ export default function AdminPage() {
   const [smacPicks, setSmacPicks] = useState<SMACPick[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'articles' | 'users' | 'smac-picks'>('articles');
+  const [activeTab, setActiveTab] = useState<'articles' | 'users' | 'smac-picks' | 'smac-coins'>('articles');
   const [isCreatingPick, setIsCreatingPick] = useState(false);
   const [newPick, setNewPick] = useState<Omit<SMACPick, 'id' | 'result' | 'yield'>>({
     date: '',
@@ -79,6 +86,8 @@ export default function AdminPage() {
     year: new Date().getFullYear(),
     potentialYield: 0
   });
+  const [distributionSettings, setDistributionSettings] = useState<SMACCoinsDistribution | null>(null);
+  const [isUpdatingDistribution, setIsUpdatingDistribution] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -110,6 +119,8 @@ export default function AdminPage() {
             // Set empty array on error
             setSmacPicks([]);
           }
+        } else if (activeTab === 'smac-coins') {
+          fetchDistributionSettings();
         }
       } catch (err) {
         console.error('Error in fetchData:', err);
@@ -123,6 +134,41 @@ export default function AdminPage() {
       fetchData();
     }
   }, [status, activeTab]);
+
+  const fetchDistributionSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/smac-coins-distribution');
+      if (!response.ok) throw new Error('Failed to fetch distribution settings');
+      const data = await response.json();
+      setDistributionSettings(data);
+    } catch (error) {
+      console.error('Error fetching distribution settings:', error);
+      setError('Failed to load distribution settings');
+    }
+  };
+
+  const handleUpdateDistribution = async (isActive: boolean, weeklyAmount: number) => {
+    try {
+      setIsUpdatingDistribution(true);
+      const response = await fetch('/api/admin/smac-coins-distribution', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isActive, weeklyAmount }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update distribution settings');
+      const data = await response.json();
+      setDistributionSettings(data);
+      setError('Distribution settings updated successfully');
+    } catch (error) {
+      console.error('Error updating distribution settings:', error);
+      setError('Failed to update distribution settings');
+    } finally {
+      setIsUpdatingDistribution(false);
+    }
+  };
 
   const handlePublishToggle = async (articleId: string, currentStatus: boolean) => {
     try {
@@ -233,20 +279,14 @@ export default function AdminPage() {
     }
   };
 
-  const handleUpdateResult = async (pickId: string, result: string, odds: number, smacCoins: number) => {
+  const handleUpdateResult = async (pickId: string, result: string) => {
     try {
-      const pickYield = calculateYield(result, odds, smacCoins);
-      console.log('Calculating yield:', { result, odds, smacCoins, pickYield });
-
       const response = await fetch(`/api/admin/smac-picks/${pickId}/result`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          result,
-          yield: pickYield,
-        }),
+        body: JSON.stringify({ result }),
       });
 
       if (!response.ok) {
@@ -263,7 +303,7 @@ export default function AdminPage() {
             ? { 
                 ...pick, 
                 result: result,
-                yield: pickYield 
+                yield: updatedPick.yield 
               }
             : pick
         )
@@ -342,6 +382,16 @@ export default function AdminPage() {
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
               SMAC Picks
+            </button>
+            <button
+              onClick={() => setActiveTab('smac-coins')}
+              className={`${
+                activeTab === 'smac-coins'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              SMAC Coins
             </button>
             <button
               onClick={() => setActiveTab('users')}
@@ -652,13 +702,19 @@ export default function AdminPage() {
                           {!pick.result && (
                             <div className="space-x-2">
                               <button
-                                onClick={() => handleUpdateResult(pick.id, 'W', pick.odds, pick.smacCoins)}
+                                onClick={() => handleUpdateResult(pick.id, 'win')}
                                 className="text-green-600 hover:text-green-900"
                               >
                                 Win
                               </button>
                               <button
-                                onClick={() => handleUpdateResult(pick.id, 'L', pick.odds, pick.smacCoins)}
+                                onClick={() => handleUpdateResult(pick.id, 'push')}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                Push
+                              </button>
+                              <button
+                                onClick={() => handleUpdateResult(pick.id, 'loss')}
                                 className="text-red-600 hover:text-red-900"
                               >
                                 Loss
@@ -671,6 +727,67 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               )}
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'smac-coins' && (
+          <section>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">SMAC Coins Distribution</h2>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Weekly Distribution Amount
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={distributionSettings?.weeklyAmount || 0}
+                    onChange={(e) => {
+                      const newAmount = parseInt(e.target.value);
+                      if (distributionSettings) {
+                        handleUpdateDistribution(distributionSettings.isActive, newAmount);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border rounded-md"
+                    disabled={isUpdatingDistribution}
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={distributionSettings?.isActive || false}
+                      onChange={(e) => {
+                        if (distributionSettings) {
+                          handleUpdateDistribution(e.target.checked, distributionSettings.weeklyAmount);
+                        }
+                      }}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                      disabled={isUpdatingDistribution}
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      Enable Weekly Distribution
+                    </span>
+                  </label>
+                </div>
+
+                {distributionSettings?.lastDistributed && (
+                  <div className="text-sm text-gray-500">
+                    Last distributed: {new Date(distributionSettings.lastDistributed).toLocaleString()}
+                  </div>
+                )}
+
+                <div className="text-sm text-gray-500">
+                  When enabled, all users will receive the specified amount of SMAC coins every week.
+                  The distribution will continue until disabled.
+                </div>
+              </div>
             </div>
           </section>
         )}

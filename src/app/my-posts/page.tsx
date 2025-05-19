@@ -5,14 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-interface Article {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: string;
-  published: boolean;
-}
-
 interface GamePick {
   id: string;
   title: string;
@@ -26,39 +18,45 @@ interface GamePick {
   published: boolean;
 }
 
+interface UserSMACPick {
+  id: string;
+  date: string;
+  sport: string;
+  game: string;
+  bet: string;
+  odds: number;
+  smacCoins: number;
+  result?: string;
+  yield?: number;
+  weekNumber: number;
+  year: number;
+}
+
 export default function MyPosts() {
-  const [articles, setArticles] = useState<Article[]>([]);
   const [picks, setPicks] = useState<GamePick[]>([]);
+  const [userPicks, setUserPicks] = useState<UserSMACPick[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [userSmacCoins, setUserSmacCoins] = useState<number>(0);
   const { data: session } = useSession();
   const router = useRouter();
 
   useEffect(() => {
     if (session?.user) {
-      fetchMyArticles();
       fetchMyPicks();
+      fetchUserPicks();
+      fetchUserSmacCoins();
     }
   }, [session]);
 
-  const fetchMyArticles = async () => {
-    try {
-      setError(null);
-
-      const articlesResponse = await fetch('/api/articles/my-articles');
-
-      if (!articlesResponse.ok) {
-        throw new Error('Failed to fetch articles');
-      }
-
-      const articlesData = await articlesResponse.json();
-      setArticles(articlesData);
-    } catch (err) {
-      console.error('Error fetching articles:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load articles');
+  useEffect(() => {
+    if (session?.user) {
+      fetchUserPicks();
     }
-  };
+  }, [selectedYear, selectedWeek]);
 
   const fetchMyPicks = async () => {
     try {
@@ -80,27 +78,34 @@ export default function MyPosts() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this article?')) {
-      return;
-    }
-
+  const fetchUserPicks = async () => {
     try {
-      setDeletingId(id);
-      const response = await fetch(`/api/articles/${id}`, {
-        method: 'DELETE',
-      });
+      const url = new URL('/api/user-smac-picks', window.location.origin);
+      if (selectedWeek) url.searchParams.set('week', selectedWeek.toString());
+      if (selectedYear) url.searchParams.set('year', selectedYear.toString());
 
+      const response = await fetch(url);
       if (!response.ok) {
-        throw new Error('Failed to delete article');
+        throw new Error('Failed to fetch user picks');
       }
-
-      setArticles(articles.filter(article => article.id !== id));
+      const data = await response.json();
+      setUserPicks(data);
     } catch (err) {
-      console.error('Error deleting article:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete article');
-    } finally {
-      setDeletingId(null);
+      console.error('Error fetching user picks:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load user picks');
+    }
+  };
+
+  const fetchUserSmacCoins = async () => {
+    try {
+      const response = await fetch('/api/user/smac-coins');
+      if (!response.ok) {
+        throw new Error('Failed to fetch SMAC coins');
+      }
+      const data = await response.json();
+      setUserSmacCoins(data.smacCoins);
+    } catch (err) {
+      console.error('Error fetching SMAC coins:', err);
     }
   };
 
@@ -128,23 +133,90 @@ export default function MyPosts() {
     }
   };
 
+  const handleResultUpdate = async (pickId: string, result: string) => {
+    try {
+      const response = await fetch(`/api/user-smac-picks/${pickId}/result`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ result }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update pick result');
+      }
+
+      // Refresh the picks list
+      fetchUserPicks();
+      // Refresh the user's SMAC coins
+      fetchUserSmacCoins();
+    } catch (error) {
+      console.error('Error updating pick result:', error);
+    }
+  };
+
+  // Group picks by week
+  const picksByWeek = userPicks.reduce((acc, pick) => {
+    const weekKey = `${pick.year}-${pick.weekNumber}`;
+    if (!acc[weekKey]) {
+      acc[weekKey] = [];
+    }
+    acc[weekKey].push(pick);
+    return acc;
+  }, {} as Record<string, UserSMACPick[]>);
+
+  // Calculate weekly stats
+  const weeklyStats = Object.entries(picksByWeek).map(([weekKey, weekPicks]) => {
+    const [year, weekNumber] = weekKey.split('-').map(Number);
+    const totalPicks = weekPicks.length;
+    const wins = weekPicks.filter(pick => pick.result === 'win').length;
+    const losses = weekPicks.filter(pick => pick.result === 'loss').length;
+    const pending = weekPicks.filter(pick => !pick.result).length;
+
+    // Calculate weighted total yield
+    const totalStaked = weekPicks.reduce((sum, pick) => sum + (pick.smacCoins || 0), 0);
+    const weightedYield = weekPicks.reduce((sum, pick) => {
+      if (!pick.result || !pick.smacCoins) return sum;
+      const weight = pick.smacCoins / totalStaked;
+      return sum + (pick.yield * weight);
+    }, 0);
+
+    return {
+      weekKey,
+      year,
+      weekNumber,
+      totalPicks,
+      wins,
+      losses,
+      pending,
+      totalYield: Number(weightedYield.toFixed(2)),
+      avgYield: Number((weightedYield / (wins + losses)).toFixed(2)),
+      picks: weekPicks
+    };
+  });
+
+  // Sort weeks by year and week number (descending)
+  weeklyStats.sort((a, b) => {
+    if (a.year !== b.year) return b.year - a.year;
+    return b.weekNumber - a.weekNumber;
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">My Posts</h1>
-        <div className="space-x-4">
-          <Link
-            href="/create-article"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Create New Article
-          </Link>
-          <Link
-            href="/create-pick"
+        <h1 className="text-3xl font-bold">Profile</h1>
+        <div className="flex items-center space-x-6">
+          <div className="bg-gray-100 px-4 py-2 rounded-lg">
+            <span className="text-gray-600">SMAC Coins:</span>
+            <span className="ml-2 font-semibold text-gray-900">{userSmacCoins}</span>
+          </div>
+          <button
+            onClick={() => router.push('/create-pick')}
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
           >
             Create New Pick
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -159,50 +231,7 @@ export default function MyPosts() {
       ) : (
         <div className="space-y-8">
           <div>
-            <h2 className="text-2xl font-semibold mb-4">My Articles</h2>
-            {articles.length === 0 ? (
-              <p className="text-gray-500">No articles found.</p>
-            ) : (
-              <div className="grid gap-4">
-                {articles.map((article) => (
-                  <div
-                    key={article.id}
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-xl font-semibold">{article.title}</h3>
-                        <p className="text-gray-500 text-sm">
-                          Created: {new Date(article.createdAt).toLocaleDateString()}
-                        </p>
-                        <p className="text-gray-500 text-sm">
-                          Status: {article.published ? 'Published' : 'Draft'}
-                        </p>
-                      </div>
-                      <div className="space-x-2">
-                        <Link
-                          href={`/edit-article/${article.id}`}
-                          className="text-blue-500 hover:text-blue-700"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(article.id)}
-                          className="text-red-500 hover:text-red-700"
-                          disabled={deletingId === article.id}
-                        >
-                          {deletingId === article.id ? 'Deleting...' : 'Delete'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">My Articles</h2>
+            <h2 className="text-2xl font-semibold mb-4">My SMAC Articles</h2>
             {picks.length === 0 ? (
               <p className="text-gray-500">No articles found.</p>
             ) : (
@@ -229,21 +258,183 @@ export default function MyPosts() {
                         </p>
                       </div>
                       <div className="space-x-2">
-                        <Link
-                          href={`/edit-pick/${pick.id}`}
-                          className="text-blue-500 hover:text-blue-700"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDeletePick(pick.id)}
-                          className="text-red-500 hover:text-red-700"
-                          disabled={deletingId === pick.id}
-                        >
-                          {deletingId === pick.id ? 'Deleting...' : 'Delete'}
-                        </button>
+                        {!pick.published && (
+                          <Link
+                            href={`/edit-pick/${pick.id}`}
+                            className="text-blue-500 hover:text-blue-700"
+                          >
+                            Edit
+                          </Link>
+                        )}
+                        {!pick.published && (
+                          <button
+                            onClick={() => handleDeletePick(pick.id)}
+                            className="text-red-500 hover:text-red-700"
+                            disabled={deletingId === pick.id}
+                          >
+                            {deletingId === pick.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        )}
                       </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">My SMAC Picks</h2>
+            
+            <div className="mb-8 flex gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Year
+                </label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="px-3 py-2 border rounded-md"
+                >
+                  {[2025, 2024, 2023].map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Week
+                </label>
+                <select
+                  value={selectedWeek || ''}
+                  onChange={(e) => setSelectedWeek(e.target.value ? parseInt(e.target.value) : null)}
+                  className="px-3 py-2 border rounded-md"
+                >
+                  <option value="">All Weeks</option>
+                  {Array.from({ length: 52 }, (_, i) => i + 1).map((week) => (
+                    <option key={week} value={week}>
+                      Week {week}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {weeklyStats.length === 0 ? (
+              <p className="text-gray-500">No picks found for the selected period.</p>
+            ) : (
+              <div className="space-y-8">
+                {weeklyStats.map((week) => (
+                  <div key={week.weekKey} className="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div className="bg-gray-50 px-6 py-4 border-b">
+                      <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-semibold">
+                          {week.year} - Week {week.weekNumber}
+                        </h2>
+                        <div className="flex gap-4 text-sm">
+                          <span className="text-green-600">Wins: {week.wins}</span>
+                          <span className="text-red-600">Losses: {week.losses}</span>
+                          <span className="text-gray-600">Pending: {week.pending}</span>
+                          <span className="font-medium">
+                            Yield: {week.totalYield.toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Sport
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Game
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Bet
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Odds
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            SMAC Coins
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Result
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Yield
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {week.picks.map((pick) => (
+                          <tr key={pick.id}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">
+                                {new Date(pick.date).toLocaleString()}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{pick.sport}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{pick.game}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{pick.bet}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{pick.odds}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{pick.smacCoins}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{pick.result || '-'}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">
+                                {pick.result === 'push' ? 'Push' : pick.yield ? `${pick.yield}%` : '-'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              {!pick.result && (
+                                <div className="space-x-2">
+                                  <button
+                                    onClick={() => handleResultUpdate(pick.id, 'win')}
+                                    className="text-green-600 hover:text-green-900"
+                                  >
+                                    Win
+                                  </button>
+                                  <button
+                                    onClick={() => handleResultUpdate(pick.id, 'push')}
+                                    className="text-blue-600 hover:text-blue-900"
+                                  >
+                                    Push
+                                  </button>
+                                  <button
+                                    onClick={() => handleResultUpdate(pick.id, 'loss')}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    Loss
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 ))}
               </div>

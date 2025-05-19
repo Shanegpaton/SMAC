@@ -1,0 +1,7 @@
+-- CreateTable
+CREATE TABLE "GlobalSMACCoins" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "balance" INTEGER NOT NULL DEFAULT 1000,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);

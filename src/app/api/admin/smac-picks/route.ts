@@ -32,103 +32,94 @@ export async function GET(request: Request) {
   }
 }
 
+// Helper function to get or create SMAC coins record
+async function getOrCreateSMACCoins() {
+  let smacCoins = await prisma.globalSMACCoins.findFirst();
+  if (!smacCoins) {
+    smacCoins = await prisma.globalSMACCoins.create({
+      data: {
+        balance: 1000, // Default starting balance
+      },
+    });
+  }
+  return smacCoins;
+}
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json(
-        { error: 'You must be an admin to create SMAC picks' },
-        { status: 401 }
-      );
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user?.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     console.log('Received request body:', body);
-    const { date, sport, game, bet, odds, smacCoins } = body;
+    const { date, sport, game, bet, odds, smacCoins, weekNumber, year } = body;
 
     // Validate required fields
-    if (!date || !sport || !game || !bet || !odds || !smacCoins) {
-      console.log('Missing required fields:', {
-        date: !date,
-        sport: !sport,
-        game: !game,
-        bet: !bet,
-        odds: !odds,
-        smacCoins: !smacCoins
-      });
+    if (!date || !sport || !game || !bet || !odds || !smacCoins || !weekNumber || !year) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
       );
     }
 
-    // Calculate week number and year
-    const pickDate = new Date(date);
-    console.log('Parsed date:', pickDate);
-    
-    if (isNaN(pickDate.getTime())) {
+    // Get the global SMAC coins balance
+    const globalSMACCoins = await getOrCreateSMACCoins();
+
+    // Check if there are enough SMAC coins
+    if (globalSMACCoins.balance < smacCoins) {
       return NextResponse.json(
-        { error: 'Invalid date format' },
+        { error: 'Not enough SMAC coins' },
         { status: 400 }
       );
     }
 
-    const weekNumber = getWeekNumber(pickDate);
-    const year = pickDate.getFullYear();
+    // Create the pick and update SMAC coins in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create the pick
+      const newPick = await tx.sMACPick.create({
+        data: {
+          date: new Date(date),
+          sport,
+          game,
+          bet,
+          odds,
+          smacCoins,
+          weekNumber,
+          year,
+          authorId: user.id,
+        },
+      });
 
-    // Validate numeric fields
-    const parsedOdds = parseFloat(odds);
-    const parsedSmacCoins = parseInt(smacCoins);
+      // Update global SMAC coins
+      await tx.globalSMACCoins.update({
+        where: { id: globalSMACCoins.id },
+        data: {
+          balance: {
+            decrement: smacCoins,
+          },
+        },
+      });
 
-    if (isNaN(parsedOdds)) {
-      return NextResponse.json(
-        { error: 'Invalid odds value' },
-        { status: 400 }
-      );
-    }
-
-    if (isNaN(parsedSmacCoins)) {
-      return NextResponse.json(
-        { error: 'Invalid SMAC coins value' },
-        { status: 400 }
-      );
-    }
-
-    console.log('Creating pick with data:', {
-      date: pickDate,
-      sport,
-      game,
-      bet,
-      odds: parsedOdds,
-      smacCoins: parsedSmacCoins,
-      weekNumber,
-      year,
-      authorId: session.user.id
+      return newPick;
     });
 
-    // Create the pick
-    const pick = await prisma.sMACPick.create({
-      data: {
-        date: pickDate,
-        sport,
-        game,
-        bet,
-        odds: parsedOdds,
-        smacCoins: parsedSmacCoins,
-        weekNumber,
-        year,
-        authorId: session.user.id,
-      },
-    });
-
-    console.log('Successfully created pick:', pick);
-    return NextResponse.json(pick);
+    console.log('Successfully created pick:', result);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error creating SMAC pick:', error);
-    // Return a more specific error message
     return NextResponse.json(
-      { error: `Failed to create SMAC pick: ${error.message}` },
+      { error: 'Failed to create SMAC pick' },
       { status: 500 }
     );
   }

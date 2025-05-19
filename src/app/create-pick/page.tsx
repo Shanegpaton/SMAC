@@ -1,73 +1,103 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
 export default function CreatePick() {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [homeTeam, setHomeTeam] = useState('');
-  const [awayTeam, setAwayTeam] = useState('');
-  const [gameDate, setGameDate] = useState('');
-  const [pick, setPick] = useState('');
-  const [reasoning, setReasoning] = useState('');
+  const [sport, setSport] = useState('');
+  const [game, setGame] = useState('');
+  const [bet, setBet] = useState('');
+  const [odds, setOdds] = useState('');
+  const [smacCoins, setSmacCoins] = useState('');
+  const [date, setDate] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userSmacCoins, setUserSmacCoins] = useState<number>(0);
   const router = useRouter();
   const { data: session } = useSession();
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchUserSmacCoins();
+    }
+  }, [session]);
+
+  const fetchUserSmacCoins = async () => {
+    try {
+      const response = await fetch('/api/user/smac-coins');
+      if (!response.ok) {
+        throw new Error('Failed to fetch SMAC coins');
+      }
+      const data = await response.json();
+      setUserSmacCoins(data.smacCoins);
+    } catch (err) {
+      console.error('Error fetching SMAC coins:', err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
 
-    try {
-      console.log('Submitting pick:', {
-        title,
-        description,
-        homeTeam,
-        awayTeam,
-        gameDate,
-        pick,
-        reasoning,
-      });
+    // Validate all required fields
+    if (!sport || !game || !bet || !odds || !smacCoins || !date) {
+      setError('All fields are required');
+      setIsSubmitting(false);
+      return;
+    }
 
-      const response = await fetch('/api/picks', {
+    // Validate numeric fields
+    const parsedOdds = parseFloat(odds);
+    const parsedSmacCoins = parseInt(smacCoins);
+
+    if (isNaN(parsedOdds)) {
+      setError('Invalid odds value');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (isNaN(parsedSmacCoins) || parsedSmacCoins <= 0) {
+      setError('SMAC coins must be a positive number');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      // Format the date to ISO string
+      const formattedDate = new Date(date).toISOString();
+
+      const formData = {
+        sport,
+        game,
+        bet,
+        odds: parsedOdds,
+        smacCoins: parsedSmacCoins,
+        date: formattedDate,
+      };
+
+      console.log('Submitting pick:', formData);
+
+      const response = await fetch('/api/user-smac-picks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title,
-          description,
-          homeTeam,
-          awayTeam,
-          gameDate,
-          pick,
-          reasoning,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
       console.log('Response data:', data);
 
       if (!response.ok) {
-        if (data.missingFields) {
-          const missingFields = Object.entries(data.missingFields)
-            .filter(([_, isMissing]) => isMissing)
-            .map(([field]) => field)
-            .join(', ');
-          throw new Error(`Please fill in all required fields: ${missingFields}`);
-        }
-        throw new Error(data.error || data.details || 'Failed to create pick');
+        throw new Error(data.error || 'Failed to create pick');
       }
 
       router.push('/my-posts');
-      router.refresh();
-    } catch (err) {
-      console.error('Error creating pick:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
+    } catch (error) {
+      console.error('Error creating pick:', error);
+      setError(error.message || 'Failed to create pick');
     } finally {
       setIsSubmitting(false);
     }
@@ -88,13 +118,19 @@ export default function CreatePick() {
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Create Game Pick</h1>
-          <button
-            onClick={() => router.push('/my-posts')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Back to My Posts
-          </button>
+          <h1 className="text-3xl font-bold">Create SMAC Pick</h1>
+          <div className="flex items-center space-x-6">
+            <div className="bg-gray-100 px-4 py-2 rounded-lg">
+              <span className="text-gray-600">SMAC Coins:</span>
+              <span className="ml-2 font-semibold text-gray-900">{userSmacCoins}</span>
+            </div>
+            <button
+              onClick={() => router.push('/my-posts')}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Back to My Posts
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -105,28 +141,42 @@ export default function CreatePick() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-              Title
+            <label htmlFor="sport" className="block text-sm font-medium text-gray-700">
+              Sport
             </label>
             <input
               type="text"
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              id="sport"
+              value={sport}
+              onChange={(e) => setSport(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-              Description
+            <label htmlFor="game" className="block text-sm font-medium text-gray-700">
+              Game
             </label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
+            <input
+              type="text"
+              id="game"
+              value={game}
+              onChange={(e) => setGame(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="bet" className="block text-sm font-medium text-gray-700">
+              Bet
+            </label>
+            <input
+              type="text"
+              id="bet"
+              value={bet}
+              onChange={(e) => setBet(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               required
             />
@@ -134,28 +184,29 @@ export default function CreatePick() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="homeTeam" className="block text-sm font-medium text-gray-700">
-                Home Team
+              <label htmlFor="odds" className="block text-sm font-medium text-gray-700">
+                Odds
               </label>
               <input
-                type="text"
-                id="homeTeam"
-                value={homeTeam}
-                onChange={(e) => setHomeTeam(e.target.value)}
+                type="number"
+                id="odds"
+                value={odds}
+                onChange={(e) => setOdds(e.target.value)}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="awayTeam" className="block text-sm font-medium text-gray-700">
-                Away Team
+              <label htmlFor="smacCoins" className="block text-sm font-medium text-gray-700">
+                SMAC Coins
               </label>
               <input
-                type="text"
-                id="awayTeam"
-                value={awayTeam}
-                onChange={(e) => setAwayTeam(e.target.value)}
+                type="number"
+                id="smacCoins"
+                value={smacCoins}
+                onChange={(e) => setSmacCoins(e.target.value)}
+                min="0"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 required
               />
@@ -163,42 +214,14 @@ export default function CreatePick() {
           </div>
 
           <div>
-            <label htmlFor="gameDate" className="block text-sm font-medium text-gray-700">
-              Game Date
+            <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+              Date
             </label>
             <input
-              type="date"
-              id="gameDate"
-              value={gameDate}
-              onChange={(e) => setGameDate(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="pick" className="block text-sm font-medium text-gray-700">
-              Your Pick
-            </label>
-            <input
-              type="text"
-              id="pick"
-              value={pick}
-              onChange={(e) => setPick(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="reasoning" className="block text-sm font-medium text-gray-700">
-              Reasoning
-            </label>
-            <textarea
-              id="reasoning"
-              value={reasoning}
-              onChange={(e) => setReasoning(e.target.value)}
-              rows={4}
+              type="datetime-local"
+              id="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               required
             />

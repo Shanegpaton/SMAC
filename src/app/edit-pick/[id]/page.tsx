@@ -8,7 +8,6 @@ import { use } from 'react';
 interface GamePick {
   id: string;
   title: string;
-  description: string;
   gameDate: string;
   homeTeam: string;
   awayTeam: string;
@@ -20,7 +19,6 @@ interface GamePick {
 export default function EditPick({ params }: { params: { id: string } }) {
   const [pick, setPick] = useState<GamePick | null>(null);
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
   const [gameDate, setGameDate] = useState('');
@@ -48,7 +46,6 @@ export default function EditPick({ params }: { params: { id: string } }) {
       const data = await response.json();
       setPick(data);
       setTitle(data.title);
-      setDescription(data.description);
       setHomeTeam(data.homeTeam);
       setAwayTeam(data.awayTeam);
       setGameDate(data.gameDate.split('T')[0]); // Format date for input
@@ -68,13 +65,12 @@ export default function EditPick({ params }: { params: { id: string } }) {
 
     try {
       const response = await fetch(`/api/picks/${pickId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           title,
-          description,
           homeTeam,
           awayTeam,
           gameDate,
@@ -120,6 +116,23 @@ export default function EditPick({ params }: { params: { id: string } }) {
     );
   }
 
+  if (pick.published) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Cannot Edit Published Article</h1>
+          <p className="mb-4">Published articles cannot be edited.</p>
+          <button
+            onClick={() => router.push('/my-posts')}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Back to My Posts
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
@@ -155,20 +168,6 @@ export default function EditPick({ params }: { params: { id: string } }) {
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-              Description
-            </label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               required
             />
