@@ -6,7 +6,11 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    console.log('=== Getting Distribution Settings ===');
+    console.log('Session user:', session?.user?.email);
+
     if (!session?.user?.email) {
+      console.log('No session or email found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -14,41 +18,45 @@ export async function GET() {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     });
+    console.log('Admin check:', {
+      email: user?.email,
+      isAdmin: user?.isAdmin
+    });
 
     if (!user?.isAdmin) {
+      console.log('User is not admin:', session.user.email);
       return NextResponse.json(
-        { error: 'You must be an admin to view distribution settings' },
+        { error: 'You must be an admin to access distribution settings' },
         { status: 401 }
       );
     }
 
-    // Get the current distribution settings
-    let settings = await prisma.sMACCoinsDistribution.findFirst();
-    
-    // If no settings exist, create default settings
-    if (!settings) {
-      settings = await prisma.sMACCoinsDistribution.create({
-        data: {
-          isActive: false,
-          weeklyAmount: 100,
-        },
-      });
-    }
+    // Get distribution settings
+    const distribution = await prisma.SMACCoinsDistribution.findFirst();
+    console.log('Distribution settings:', distribution);
 
-    return NextResponse.json(settings);
+    return NextResponse.json(distribution || {
+      isActive: false,
+      weeklyAmount: 0,
+      lastDistributed: null
+    });
   } catch (error) {
-    console.error('Error fetching distribution settings:', error);
+    console.error('Error getting distribution settings:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch distribution settings' },
+      { error: 'Failed to get distribution settings' },
       { status: 500 }
     );
   }
 }
 
-export async function PATCH(request: Request) {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('=== Updating Distribution Settings ===');
+    console.log('Session user:', session?.user?.email);
+
     if (!session?.user?.email) {
+      console.log('No session or email found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -56,87 +64,118 @@ export async function PATCH(request: Request) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     });
+    console.log('Admin check:', {
+      email: user?.email,
+      isAdmin: user?.isAdmin
+    });
 
     if (!user?.isAdmin) {
+      console.log('User is not admin:', session.user.email);
       return NextResponse.json(
         { error: 'You must be an admin to update distribution settings' },
         { status: 401 }
       );
     }
 
-    const { isActive, weeklyAmount } = await request.json();
+    const body = await request.json();
+    console.log('Request body:', body);
 
-    if (typeof isActive !== 'boolean' || typeof weeklyAmount !== 'number' || weeklyAmount < 0) {
+    const { isActive, weeklyAmount } = body;
+
+    if (typeof isActive !== 'boolean' || typeof weeklyAmount !== 'number') {
+      console.log('Invalid input:', { isActive, weeklyAmount });
       return NextResponse.json(
-        { error: 'Invalid settings. isActive must be boolean and weeklyAmount must be a non-negative number' },
+        { error: 'Invalid input. isActive must be boolean and weeklyAmount must be a number' },
         { status: 400 }
       );
     }
 
-    // Get or create settings
-    let settings = await prisma.sMACCoinsDistribution.findFirst();
-    
-    if (!settings) {
-      settings = await prisma.sMACCoinsDistribution.create({
-        data: {
-          isActive,
-          weeklyAmount,
-        },
-      });
-    } else {
-      settings = await prisma.sMACCoinsDistribution.update({
-        where: { id: settings.id },
-        data: {
-          isActive,
-          weeklyAmount,
-        },
-      });
-    }
+    // Get current distribution settings
+    const currentDistribution = await prisma.SMACCoinsDistribution.findFirst();
+    console.log('Current distribution settings:', currentDistribution);
 
-    // If distribution is being activated, distribute coins immediately
-    if (isActive && (!settings.lastDistributed || 
-        new Date().getTime() - settings.lastDistributed.getTime() > 7 * 24 * 60 * 60 * 1000)) {
-      await distributeCoins(weeklyAmount);
-      settings = await prisma.sMACCoinsDistribution.update({
-        where: { id: settings.id },
-        data: {
-          lastDistributed: new Date(),
-        },
-      });
-    }
+    // Update distribution settings and distribute coins if being activated
+    const result = await prisma.$transaction(async (tx) => {
+      let distribution;
+      
+      if (currentDistribution) {
+        // Update existing distribution
+        distribution = await tx.SMACCoinsDistribution.update({
+          where: { id: currentDistribution.id },
+          data: {
+            isActive,
+            weeklyAmount,
+            // If turning on distribution, set lastDistributed to now
+            ...(isActive && !currentDistribution.isActive ? { lastDistributed: new Date() } : {})
+          }
+        });
+      } else {
+        // Create new distribution
+        distribution = await tx.SMACCoinsDistribution.create({
+          data: {
+            isActive,
+            weeklyAmount,
+            // If active, set lastDistributed to now
+            ...(isActive ? { lastDistributed: new Date() } : {})
+          }
+        });
+      }
 
-    return NextResponse.json(settings);
+      // If distribution is being activated, distribute coins immediately
+      if (isActive && (!currentDistribution?.isActive || !currentDistribution?.lastDistributed)) {
+        console.log('Distributing coins immediately...');
+        
+        // Get all users
+        const users = await tx.user.findMany({
+          select: {
+            id: true,
+            email: true,
+            smacCoins: true
+          }
+        });
+        console.log('Current user balances:', users.map(u => ({
+          email: u.email,
+          currentBalance: u.smacCoins
+        })));
+
+        // Update each user's SMAC coins
+        const updatePromises = users.map(async user => {
+          console.log(`Updating user ${user.email}...`);
+          const updatedUser = await tx.user.update({
+            where: { id: user.id },
+            data: {
+              smacCoins: {
+                increment: weeklyAmount
+              }
+            },
+            select: {
+              id: true,
+              email: true,
+              smacCoins: true
+            }
+          });
+          console.log(`Updated user ${user.email}:`, {
+            oldBalance: user.smacCoins,
+            newBalance: updatedUser.smacCoins,
+            added: weeklyAmount
+          });
+          return updatedUser;
+        });
+
+        await Promise.all(updatePromises);
+        console.log('Initial distribution complete');
+      }
+
+      return distribution;
+    });
+
+    console.log('Updated distribution settings:', result);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error updating distribution settings:', error);
     return NextResponse.json(
       { error: 'Failed to update distribution settings' },
       { status: 500 }
     );
-  }
-}
-
-async function distributeCoins(amount: number) {
-  try {
-    // Get all users
-    const users = await prisma.user.findMany();
-    
-    // Update each user's SMAC coins balance
-    await prisma.$transaction(
-      users.map(user => 
-        prisma.user.update({
-          where: { id: user.id },
-          data: {
-            smacCoins: {
-              increment: amount
-            }
-          }
-        })
-      )
-    );
-
-    console.log(`Distributed ${amount} SMAC coins to ${users.length} users`);
-  } catch (error) {
-    console.error('Error distributing coins:', error);
-    throw error;
   }
 } 

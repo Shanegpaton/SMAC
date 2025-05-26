@@ -51,6 +51,15 @@ interface SMACCoinsDistribution {
   lastDistributed: string | null;
 }
 
+interface ResetCoinsResponse {
+  success: boolean;
+  message: string;
+  users: Array<{
+    email: string;
+    newBalance: number;
+  }>;
+}
+
 // Helper function to calculate yield
 function calculateYield(result: string, odds: number, stake: number): number {
   if (result === 'W') {
@@ -86,8 +95,12 @@ export default function AdminPage() {
     year: new Date().getFullYear(),
     potentialYield: 0
   });
-  const [distributionSettings, setDistributionSettings] = useState<SMACCoinsDistribution | null>(null);
+  const [distribution, setDistribution] = useState<SMACCoinsDistribution | null>(null);
+  const [distributionAmount, setDistributionAmount] = useState<number>(0);
   const [isUpdatingDistribution, setIsUpdatingDistribution] = useState(false);
+  const [isForcingDistribution, setIsForcingDistribution] = useState(false);
+  const [distributionMessage, setDistributionMessage] = useState<string | null>(null);
+  const [nextDistribution, setNextDistribution] = useState<Date | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -98,6 +111,11 @@ export default function AdminPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        if (status !== 'authenticated') {
+          console.log('Not authenticated, skipping fetch');
+          return;
+        }
+
         if (activeTab === 'articles') {
           const response = await fetch('/api/admin/picks');
           if (!response.ok) throw new Error('Failed to fetch articles');
@@ -112,11 +130,9 @@ export default function AdminPage() {
           try {
             const response = await fetch('/api/admin/smac-picks');
             const data = await response.json();
-            // Always set the picks, even if empty array
             setSmacPicks(Array.isArray(data) ? data : []);
           } catch (fetchError) {
             console.error('Error fetching SMAC picks:', fetchError);
-            // Set empty array on error
             setSmacPicks([]);
           }
         } else if (activeTab === 'smac-coins') {
@@ -135,33 +151,56 @@ export default function AdminPage() {
     }
   }, [status, activeTab]);
 
+  useEffect(() => {
+    if (activeTab === 'smac-coins') {
+      fetchDistributionSettings();
+    }
+  }, [activeTab]);
+
   const fetchDistributionSettings = async () => {
     try {
+      if (status !== 'authenticated') {
+        console.log('Not authenticated, skipping distribution settings fetch');
+        return;
+      }
+
+      console.log('Fetching distribution settings...');
       const response = await fetch('/api/admin/smac-coins-distribution');
-      if (!response.ok) throw new Error('Failed to fetch distribution settings');
+      console.log('Distribution settings response:', response);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Distribution settings error:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch distribution settings');
+      }
+      
       const data = await response.json();
-      setDistributionSettings(data);
+      console.log('Distribution settings data:', data);
+      setDistribution(data);
+      setDistributionAmount(data.weeklyAmount || 0);
     } catch (error) {
       console.error('Error fetching distribution settings:', error);
       setError('Failed to load distribution settings');
     }
   };
 
-  const handleUpdateDistribution = async (isActive: boolean, weeklyAmount: number) => {
+  const handleDistributionToggle = async () => {
     try {
       setIsUpdatingDistribution(true);
       const response = await fetch('/api/admin/smac-coins-distribution', {
-        method: 'PATCH',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ isActive, weeklyAmount }),
+        body: JSON.stringify({
+          isActive: !distribution?.isActive,
+          weeklyAmount: distributionAmount,
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to update distribution settings');
       const data = await response.json();
-      setDistributionSettings(data);
-      setError('Distribution settings updated successfully');
+      setDistribution(data);
     } catch (error) {
       console.error('Error updating distribution settings:', error);
       setError('Failed to update distribution settings');
@@ -335,6 +374,230 @@ export default function AdminPage() {
     });
   };
 
+  const resetUserCoins = async (newBalance: number) => {
+    try {
+      const response = await fetch('/api/admin/reset-coins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newBalance }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reset coin balances');
+      }
+
+      const data: ResetCoinsResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error resetting coin balances:', error);
+      throw error;
+    }
+  };
+
+  const ResetCoinsSection = () => {
+    const [newBalance, setNewBalance] = useState<number>(1000);
+    const [isResetting, setIsResetting] = useState(false);
+    const [resetMessage, setResetMessage] = useState<string | null>(null);
+
+    const handleReset = async () => {
+      if (!confirm('Are you sure you want to reset all users\' SMAC coin balances? This action cannot be undone.')) {
+        return;
+      }
+
+      setIsResetting(true);
+      setResetMessage(null);
+
+      try {
+        const result = await resetUserCoins(newBalance);
+        setResetMessage(result.message);
+      } catch (error) {
+        setResetMessage(error instanceof Error ? error.message : 'Failed to reset coin balances');
+      } finally {
+        setIsResetting(false);
+      }
+    };
+
+    const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      // Remove leading zeros and convert to number
+      const numberValue = value === '' ? 0 : parseInt(value.replace(/^0+/, ''), 10);
+      setNewBalance(numberValue);
+    };
+
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Reset User Coin Balances</h2>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="newBalance" className="block text-sm font-medium text-gray-700">
+              New Balance
+            </label>
+            <input
+              type="number"
+              id="newBalance"
+              value={newBalance || ''}
+              onChange={handleBalanceChange}
+              min="0"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            />
+          </div>
+          <button
+            onClick={handleReset}
+            disabled={isResetting}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+          >
+            {isResetting ? 'Resetting...' : 'Reset All Balances'}
+          </button>
+          {resetMessage && (
+            <div className={`mt-2 text-sm ${resetMessage.includes('Failed') ? 'text-red-600' : 'text-green-600'}`}>
+              {resetMessage}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const SMACCoinsDistributionSection = () => {
+    const handleForceDistribution = async () => {
+      if (!confirm('Are you sure you want to force distribute SMAC coins now?')) {
+        return;
+      }
+
+      setIsForcingDistribution(true);
+      setDistributionMessage(null);
+
+      try {
+        const response = await fetch('/api/admin/smac-coins-distribution/force', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to force distribution');
+        }
+
+        setDistributionMessage(data.message);
+        // Refresh the distribution settings
+        fetchDistributionSettings();
+      } catch (error) {
+        console.error('Error forcing distribution:', error);
+        setDistributionMessage(error instanceof Error ? error.message : 'Failed to force distribution');
+      } finally {
+        setIsForcingDistribution(false);
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Weekly Distribution Amount
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={distributionAmount}
+                onChange={(e) => setDistributionAmount(parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 border rounded-md"
+                disabled={isUpdatingDistribution}
+              />
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleDistributionToggle}
+                disabled={isUpdatingDistribution}
+                className={`px-4 py-2 rounded-md text-white ${
+                  distribution?.isActive
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {isUpdatingDistribution
+                  ? 'Updating...'
+                  : distribution?.isActive
+                  ? 'Stop Distribution'
+                  : 'Start Distribution'}
+              </button>
+
+              {distribution?.isActive && (
+                <button
+                  onClick={handleForceDistribution}
+                  disabled={isForcingDistribution}
+                  className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isForcingDistribution ? 'Distributing...' : 'Force Distribution Now'}
+                </button>
+              )}
+
+              {distribution?.isActive && (
+                <span className="text-sm text-gray-500">
+                  Last distributed: {distribution.lastDistributed
+                    ? new Date(distribution.lastDistributed).toLocaleString()
+                    : 'Never'}
+                </span>
+              )}
+            </div>
+
+            {distributionMessage && (
+              <div className={`mt-2 p-4 rounded-md ${
+                distributionMessage.includes('Failed') 
+                  ? 'bg-red-50 text-red-700' 
+                  : 'bg-green-50 text-green-700'
+              }`}>
+                {distributionMessage}
+              </div>
+            )}
+
+            {distribution?.isActive && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-md">
+                <p className="text-sm text-blue-700">
+                  Weekly distribution is active. Each user will receive {distribution.weeklyAmount} SMAC coins every week.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+        <ResetCoinsSection />
+      </div>
+    );
+  };
+
+  // Function to check distribution status
+  const checkDistribution = async () => {
+    try {
+      const response = await fetch('/api/admin/smac-coins-distribution/check');
+      const data = await response.json();
+      
+      if (data.nextDistribution) {
+        setNextDistribution(new Date(data.nextDistribution));
+      }
+    } catch (error) {
+      console.error('Error checking distribution:', error);
+    }
+  };
+
+  // Set up interval to check distribution every minute
+  useEffect(() => {
+    if (distribution?.isActive) {
+      // Check immediately
+      checkDistribution();
+      
+      // Then check every minute
+      const interval = setInterval(checkDistribution, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [distribution?.isActive]);
+
   if (status === 'loading') {
     return <div className="text-center py-8">Loading...</div>;
   }
@@ -384,16 +647,6 @@ export default function AdminPage() {
               SMAC Picks
             </button>
             <button
-              onClick={() => setActiveTab('smac-coins')}
-              className={`${
-                activeTab === 'smac-coins'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              SMAC Coins
-            </button>
-            <button
               onClick={() => setActiveTab('users')}
               className={`${
                 activeTab === 'users'
@@ -402,6 +655,16 @@ export default function AdminPage() {
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
               Manage Users
+            </button>
+            <button
+              onClick={() => setActiveTab('smac-coins')}
+              className={`${
+                activeTab === 'smac-coins'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              SMAC Coins
             </button>
           </nav>
         </div>
@@ -731,67 +994,6 @@ export default function AdminPage() {
           </section>
         )}
 
-        {activeTab === 'smac-coins' && (
-          <section>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">SMAC Coins Distribution</h2>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Weekly Distribution Amount
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={distributionSettings?.weeklyAmount || 0}
-                    onChange={(e) => {
-                      const newAmount = parseInt(e.target.value);
-                      if (distributionSettings) {
-                        handleUpdateDistribution(distributionSettings.isActive, newAmount);
-                      }
-                    }}
-                    className="w-full px-3 py-2 border rounded-md"
-                    disabled={isUpdatingDistribution}
-                  />
-                </div>
-
-                <div className="flex items-center">
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={distributionSettings?.isActive || false}
-                      onChange={(e) => {
-                        if (distributionSettings) {
-                          handleUpdateDistribution(e.target.checked, distributionSettings.weeklyAmount);
-                        }
-                      }}
-                      className="h-4 w-4 text-blue-600 rounded border-gray-300"
-                      disabled={isUpdatingDistribution}
-                    />
-                    <span className="text-sm font-medium text-gray-700">
-                      Enable Weekly Distribution
-                    </span>
-                  </label>
-                </div>
-
-                {distributionSettings?.lastDistributed && (
-                  <div className="text-sm text-gray-500">
-                    Last distributed: {new Date(distributionSettings.lastDistributed).toLocaleString()}
-                  </div>
-                )}
-
-                <div className="text-sm text-gray-500">
-                  When enabled, all users will receive the specified amount of SMAC coins every week.
-                  The distribution will continue until disabled.
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
         {activeTab === 'users' && (
           <section>
             <h2 className="text-2xl font-semibold mb-6">Manage Users</h2>
@@ -847,6 +1049,16 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </section>
+        )}
+
+        {activeTab === 'smac-coins' && (
+          <section>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">SMAC Coins Distribution</h2>
+            </div>
+
+            <SMACCoinsDistributionSection />
           </section>
         )}
       </div>
