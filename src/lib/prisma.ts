@@ -15,23 +15,22 @@ const MAX_CONNECTION_ATTEMPTS = 3;
 let prisma: PrismaClient;
 
 try {
+  // Modify DATABASE_URL to disable prepared statements in production
+  let databaseUrl = process.env.DATABASE_URL;
+  if (isProduction && databaseUrl) {
+    // Add parameters to disable prepared statements
+    const separator = databaseUrl.includes('?') ? '&' : '?';
+    databaseUrl = `${databaseUrl}${separator}prepared_statements=false&statement_cache_size=0`;
+  }
+  
   prisma = globalForPrisma.prisma ?? new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: databaseUrl,
       },
     },
     // Optimize for serverless environments
     log: isProduction ? ['error'] : ['error', 'warn'],
-    // Add connection management for serverless
-    ...(isProduction && {
-      // Disable connection pooling for serverless
-      __internal: {
-        engine: {
-          enableEngineDebugMode: false,
-        },
-      },
-    }),
   })
   
   // Test the connection immediately to catch any issues
