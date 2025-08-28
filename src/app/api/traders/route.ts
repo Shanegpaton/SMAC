@@ -3,8 +3,15 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
+    console.log('Traders API: Starting request');
+    
+    // Add connection timeout handling
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 15000);
+    });
+    
     // Get all users who have made picks
-    const users = await prisma.user.findMany({
+    const usersPromise = prisma.user.findMany({
       where: {
         userSMACPicks: {
           some: {} // Has at least one pick
@@ -23,6 +30,11 @@ export async function GET() {
         }
       }
     });
+
+    // Race between timeout and database query
+    const users = await Promise.race([usersPromise, timeoutPromise]) as any;
+
+    console.log('Traders API: Found', users.length, 'users with picks');
 
     // Calculate statistics for each user
     const traders = users.map(user => {
@@ -86,11 +98,12 @@ export async function GET() {
     // Sort traders by SMAC coins balance (descending)
     traders.sort((a, b) => b.smacCoins - a.smacCoins);
 
+    console.log('Traders API: Successfully processed', traders.length, 'traders');
     return NextResponse.json(traders);
   } catch (error) {
     console.error('Error fetching traders:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch traders' },
+      { error: 'Failed to fetch traders', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

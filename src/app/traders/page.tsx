@@ -21,16 +21,50 @@ export default function Traders() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTraders = async () => {
+    const fetchTraders = async (retryCount = 0) => {
       try {
-        const response = await fetch('/api/traders');
+        setLoading(true);
+        setError(null);
+        
+        console.log(`Fetching traders (attempt ${retryCount + 1})`);
+        
+        // Add timeout to the fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch('/api/traders', {
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache',
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch traders');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
         }
+        
         const data = await response.json();
-        console.log('Fetched traders data:', data); // Debug log
+        console.log('Fetched traders data:', data);
+        
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid data format received');
+        }
+        
         setTraders(data);
+        setError(null);
       } catch (err) {
+        console.error('Error fetching traders:', err);
+        
+        // Retry logic for network errors or timeouts
+        if (retryCount < 2 && (err instanceof Error && (err.name === 'AbortError' || err.message.includes('Failed to fetch')))) {
+          console.log(`Retrying... (${retryCount + 1}/2)`);
+          setTimeout(() => fetchTraders(retryCount + 1), 1000 * (retryCount + 1)); // Exponential backoff
+          return;
+        }
+        
         setError(err instanceof Error ? err.message : 'Failed to load traders');
       } finally {
         setLoading(false);
@@ -45,7 +79,17 @@ export default function Traders() {
   }
 
   if (error) {
-    return <div className="text-center py-8 text-red-500">{error}</div>;
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-4">{error}</div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
