@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    console.log('SMAC Picks API: Starting request');
+    
     const session = await getServerSession(authOptions);
     const isAdmin = session?.user?.isAdmin;
 
@@ -12,6 +14,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const week = searchParams.get('week');
     const year = searchParams.get('year');
+
+    console.log('SMAC Picks API: Query params:', { week, year });
 
     // Build where clause
     const where: any = {};
@@ -22,7 +26,12 @@ export async function GET(request: Request) {
       where.year = parseInt(year);
     }
 
-    const picks = await prisma.sMACPick.findMany({
+    // Add connection timeout handling
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 15000);
+    });
+
+    const picksPromise = prisma.sMACPick.findMany({
       where,
       orderBy: [
         { year: 'desc' },
@@ -39,11 +48,16 @@ export async function GET(request: Request) {
       },
     });
 
+    // Race between timeout and database query
+    const picks = await Promise.race([picksPromise, timeoutPromise]) as any;
+
+    console.log('SMAC Picks API: Found', picks.length, 'picks');
+
     return NextResponse.json(picks);
   } catch (error) {
     console.error('Error fetching SMAC picks:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch SMAC picks' },
+      { error: 'Failed to fetch SMAC picks', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
