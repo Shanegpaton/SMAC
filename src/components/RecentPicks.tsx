@@ -35,9 +35,11 @@ export default function RecentPicks() {
       try {
         console.log('RecentPicks: Starting fetch (attempt', retryCount + 1, ')');
         
-        // Add cache-busting parameter to ensure fresh data
+        // Add aggressive cache-busting parameters to ensure fresh data
         const url = new URL('/api/picks', window.location.origin);
         url.searchParams.set('_t', Date.now().toString());
+        url.searchParams.set('_v', Math.random().toString(36).substring(7));
+        url.searchParams.set('_cache', 'no');
         
         // Add timeout to the fetch request
         const controller = new AbortController();
@@ -46,7 +48,9 @@ export default function RecentPicks() {
         const response = await fetch(url, {
           signal: controller.signal,
           headers: {
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           }
         });
         
