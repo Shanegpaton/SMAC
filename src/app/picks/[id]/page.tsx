@@ -5,40 +5,54 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 interface PickPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 async function getPick(id: string) {
-  const session = await getServerSession(authOptions);
-  const isAdmin = session?.user?.isAdmin;
+  try {
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.isAdmin;
 
-  const pick = await prisma.SMACArticle.findUnique({
-    where: { id },
-    include: {
-      author: {
-        select: {
-          name: true,
+    // Add timeout protection for database queries
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 10000);
+    });
+
+    const pickPromise = prisma.SMACArticle.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!pick) {
+    // Race between timeout and database query
+    const pick = await Promise.race([pickPromise, timeoutPromise]) as any;
+
+    if (!pick) {
+      notFound();
+    }
+
+    // If not admin and pick is not published, redirect to home
+    if (!isAdmin && !pick.published) {
+      redirect('/');
+    }
+
+    return pick;
+  } catch (error) {
+    console.error('Error fetching pick:', error);
     notFound();
   }
-
-  // If not admin and pick is not published, redirect to home
-  if (!isAdmin && !pick.published) {
-    redirect('/');
-  }
-
-  return pick;
 }
 
 export default async function PickPage({ params }: PickPageProps) {
-  const pick = await getPick(params.id);
+  const { id } = await params;
+  const pick = await getPick(id);
 
   return (
     <div className="max-w-4xl mx-auto p-6">

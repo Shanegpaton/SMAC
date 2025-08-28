@@ -3,14 +3,19 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 interface ArticlePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 async function getArticle(id: string) {
   try {
-    const article = await prisma.article.findUnique({
+    // Add timeout protection for database queries
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 10000);
+    });
+
+    const articlePromise = prisma.sMACArticle.findUnique({
       where: { id },
       include: {
         author: {
@@ -20,6 +25,9 @@ async function getArticle(id: string) {
         },
       },
     });
+
+    // Race between timeout and database query
+    const article = await Promise.race([articlePromise, timeoutPromise]) as any;
 
     if (!article) {
       notFound();
@@ -33,7 +41,8 @@ async function getArticle(id: string) {
 }
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
-  const article = await getArticle(params.id);
+  const { id } = await params;
+  const article = await getArticle(id);
 
   return (
     <div className="max-w-4xl mx-auto p-6">

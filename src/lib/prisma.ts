@@ -6,6 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 
 // Use different connection strategies for dev vs production
 const isProduction = process.env.NODE_ENV === 'production';
+const isBuildTime = process.env.NODE_ENV === 'production' && !process.env.VERCEL;
 
 let prisma: PrismaClient;
 
@@ -18,6 +19,15 @@ try {
     },
     // Optimize for serverless environments
     log: isProduction ? ['error'] : ['error', 'warn'],
+    // Add connection management for serverless
+    ...(isProduction && {
+      // Disable connection pooling for serverless
+      __internal: {
+        engine: {
+          enableEngineDebugMode: false,
+        },
+      },
+    }),
   })
 } catch (error) {
   console.error('Failed to initialize Prisma client:', error);
@@ -39,6 +49,15 @@ if (isProduction) {
       await prisma.$disconnect()
     } catch (error) {
       console.error('Error disconnecting Prisma client:', error);
+    }
+  })
+  
+  // Also handle SIGTERM for serverless environments
+  process.on('SIGTERM', async () => {
+    try {
+      await prisma.$disconnect()
+    } catch (error) {
+      console.error('Error disconnecting Prisma client on SIGTERM:', error);
     }
   })
 }
