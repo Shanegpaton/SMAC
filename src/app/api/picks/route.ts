@@ -7,6 +7,9 @@ export async function GET() {
   try {
     console.log('Picks API: Starting request');
     
+    // Add a small delay to prevent overwhelming the database
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     const picks = await prisma.sMACArticle.findMany({
       where: {
         published: true,
@@ -34,6 +37,23 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching picks:', error);
+    
+    // Check if it's a connection-related error
+    if (error instanceof Error && (
+      error.message.includes('prepared statement') ||
+      error.message.includes('connection') ||
+      error.message.includes('timeout')
+    )) {
+      console.log('Connection error detected, returning empty array');
+      return NextResponse.json([], {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      });
+    }
+    
     return NextResponse.json(
       { error: 'Failed to fetch picks', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

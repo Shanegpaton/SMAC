@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface GamePick {
   id: string;
@@ -29,10 +30,23 @@ export default function RecentPicks() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  
+  // Debounce the status to prevent rapid-fire requests
+  const debouncedStatus = useDebounce(status, 300);
 
   useEffect(() => {
+    let isMounted = true;
+    let abortController: AbortController | null = null;
+
     const fetchPicks = async () => {
       try {
+        // Cancel any ongoing request
+        if (abortController) {
+          abortController.abort();
+        }
+        
+        abortController = new AbortController();
+        
         console.log('RecentPicks: Starting fetch (attempt', retryCount + 1, ')');
         
         // Add aggressive cache-busting parameters to ensure fresh data
@@ -42,11 +56,10 @@ export default function RecentPicks() {
         url.searchParams.set('_cache', 'no');
         
         // Add timeout to the fetch request
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => abortController?.abort(), 10000); // 10 second timeout
         
         const response = await fetch(url, {
-          signal: controller.signal,
+          signal: abortController.signal,
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
@@ -55,6 +68,9 @@ export default function RecentPicks() {
         });
         
         clearTimeout(timeoutId);
+        
+        // Check if component is still mounted
+        if (!isMounted) return;
         
         console.log('RecentPicks: Response status:', response.status);
         
@@ -76,11 +92,21 @@ export default function RecentPicks() {
           throw new Error('Invalid data format received');
         }
         
-        setPicks(data);
-        setError(null);
-        setRetryCount(0); // Reset retry count on success
+        if (isMounted) {
+          setPicks(data);
+          setError(null);
+          setRetryCount(0); // Reset retry count on success
+        }
       } catch (err) {
+        if (!isMounted) return;
+        
         console.error('RecentPicks: Error fetching picks:', err);
+        
+        // Don't retry on 500 errors to prevent infinite loops
+        if (err instanceof Error && err.message.includes('500')) {
+          setError('Server error - please try again later');
+          return;
+        }
         
         // Retry logic for network errors or timeouts
         if (retryCount < 2 && (err instanceof Error && (err.name === 'AbortError' || err.message.includes('Failed to fetch')))) {
@@ -92,14 +118,24 @@ export default function RecentPicks() {
         
         setError(err instanceof Error ? err.message : 'Failed to load picks');
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    if (status !== 'loading') {
+    if (debouncedStatus !== 'loading') {
       fetchPicks();
     }
-  }, [status, retryCount]);
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (abortController) {
+        abortController.abort();
+      }
+    };
+  }, [debouncedStatus, retryCount]);
 
   if (loading) {
     return (
