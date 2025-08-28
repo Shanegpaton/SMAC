@@ -137,7 +137,7 @@ export default function RecentPicks() {
       {picks.map((pick) => (
         <Link 
           key={pick.id} 
-          href={`/picks/${pick.id}`}
+          href={`/articles/${pick.id}`}
           className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
         >
           {pick.imageUrl && (
