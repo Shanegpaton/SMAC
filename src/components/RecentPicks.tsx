@@ -28,15 +28,31 @@ export default function RecentPicks() {
   const [picks, setPicks] = useState<GamePick[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const fetchPicks = async () => {
       try {
-        const response = await fetch('/api/picks', {
+        console.log('RecentPicks: Starting fetch (attempt', retryCount + 1, ')');
+        
+        // Add cache-busting parameter to ensure fresh data
+        const url = new URL('/api/picks', window.location.origin);
+        url.searchParams.set('_t', Date.now().toString());
+        
+        // Add timeout to the fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch(url, {
+          signal: controller.signal,
           headers: {
             'Cache-Control': 'no-cache',
           }
         });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('RecentPicks: Response status:', response.status);
         
         // Handle 304 Not Modified responses
         if (response.status === 304) {
@@ -45,13 +61,32 @@ export default function RecentPicks() {
         }
         
         if (!response.ok) {
-          throw new Error('Failed to fetch picks');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
         }
+        
         const data = await response.json();
+        console.log('RecentPicks: Fetched data:', data);
+        
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid data format received');
+        }
+        
         setPicks(data);
+        setError(null);
+        setRetryCount(0); // Reset retry count on success
       } catch (err) {
-        setError('Failed to load picks');
-        console.error('Error fetching picks:', err);
+        console.error('RecentPicks: Error fetching picks:', err);
+        
+        // Retry logic for network errors or timeouts
+        if (retryCount < 2 && (err instanceof Error && (err.name === 'AbortError' || err.message.includes('Failed to fetch')))) {
+          console.log('RecentPicks: Retrying... (', retryCount + 1, '/2)');
+          setRetryCount(prev => prev + 1);
+          setTimeout(() => fetchPicks(), 1000 * (retryCount + 1)); // Exponential backoff
+          return;
+        }
+        
+        setError(err instanceof Error ? err.message : 'Failed to load picks');
       } finally {
         setLoading(false);
       }
@@ -60,14 +95,33 @@ export default function RecentPicks() {
     if (status !== 'loading') {
       fetchPicks();
     }
-  }, [status]);
+  }, [status, retryCount]);
 
   if (loading) {
-    return <div className="text-center py-8">Loading picks...</div>;
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p>Loading picks...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center py-8 text-red-500">{error}</div>;
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500 mb-4">{error}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            setRetryCount(0);
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   if (picks.length === 0) {

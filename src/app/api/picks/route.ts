@@ -5,7 +5,14 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const picks = await prisma.sMACArticle.findMany({
+    console.log('Picks API: Starting request');
+    
+    // Add connection timeout handling
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 15000);
+    });
+
+    const picksPromise = prisma.sMACArticle.findMany({
       where: {
         published: true,
       },
@@ -21,11 +28,22 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(picks);
+    // Race between timeout and database query
+    const picks = await Promise.race([picksPromise, timeoutPromise]) as any;
+
+    console.log('Picks API: Found', picks.length, 'picks');
+
+    return NextResponse.json(picks, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   } catch (error) {
     console.error('Error fetching picks:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch picks' },
+      { error: 'Failed to fetch picks', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
