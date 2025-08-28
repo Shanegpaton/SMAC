@@ -42,6 +42,47 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching picks:', error);
+    
+    // Check if it's a prepared statement conflict error
+    if (error instanceof Error && error.message.includes('prepared statement') && error.message.includes('already exists')) {
+      console.log('Detected prepared statement conflict, attempting to reconnect...');
+      
+      try {
+        // Try to disconnect and reconnect
+        await prisma.$disconnect();
+        await prisma.$connect();
+        
+        // Retry the query once
+        const retryPicks = await prisma.sMACArticle.findMany({
+          where: {
+            published: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          include: {
+            author: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        });
+        
+        console.log('Picks API: Retry successful, found', retryPicks.length, 'picks');
+        
+        return NextResponse.json(retryPicks, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        });
+      } catch (retryError) {
+        console.error('Retry failed:', retryError);
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Failed to fetch picks', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

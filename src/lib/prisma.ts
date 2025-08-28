@@ -29,6 +29,23 @@ try {
       },
     }),
   })
+  
+  // Test the connection immediately to catch any issues
+  if (isProduction) {
+    try {
+      await prisma.$connect();
+      console.log('Prisma client connected successfully');
+    } catch (connectionError) {
+      console.error('Failed to connect to database:', connectionError);
+      // If connection fails, try to disconnect and reconnect
+      try {
+        await prisma.$disconnect();
+      } catch (disconnectError) {
+        console.error('Failed to disconnect:', disconnectError);
+      }
+      throw connectionError;
+    }
+  }
 } catch (error) {
   console.error('Failed to initialize Prisma client:', error);
   // Create a fallback client with minimal configuration
