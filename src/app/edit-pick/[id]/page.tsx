@@ -16,7 +16,7 @@ interface GamePick {
   published: boolean;
 }
 
-export default function EditPick({ params }: { params: { id: string } }) {
+export default function EditPick({ params }: { params: Promise<{ id: string }> }) {
   const [pick, setPick] = useState<GamePick | null>(null);
   const [title, setTitle] = useState('');
   const [homeTeam, setHomeTeam] = useState('');

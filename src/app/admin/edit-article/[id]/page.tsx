@@ -11,7 +11,7 @@ interface Article {
   imageUrl: string | null;
 }
 
-export default function EditArticle({ params }: { params: { id: string } }) {
+export default function EditArticle({ params }: { params: Promise<{ id: string }> }) {
   const [article, setArticle] = useState<Article | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -19,18 +19,28 @@ export default function EditArticle({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [articleId, setArticleId] = useState<string | null>(null);
   const router = useRouter();
   const { data: session } = useSession();
 
   useEffect(() => {
-    if (session?.user?.isAdmin) {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setArticleId(resolvedParams.id);
+    };
+    getParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (session?.user?.isAdmin && articleId) {
       fetchArticle();
     }
-  }, [session, params.id]);
+  }, [session, articleId]);
 
   const fetchArticle = async () => {
+    if (!articleId) return;
     try {
-      const response = await fetch(`/api/articles/${params.id}`);
+      const response = await fetch(`/api/articles/${articleId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch article');
       }
@@ -52,7 +62,7 @@ export default function EditArticle({ params }: { params: { id: string } }) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/articles/${params.id}`, {
+      const response = await fetch(`/api/articles/${articleId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

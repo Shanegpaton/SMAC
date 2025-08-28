@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { format } from 'date-fns';
 
 export default async function ArticlesPage() {
-  const articles = await prisma.article.findMany({
+  const articles = await prisma.sMACArticle.findMany({
     where: {
       published: true,
     },

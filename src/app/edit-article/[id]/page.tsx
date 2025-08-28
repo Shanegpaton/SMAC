@@ -12,7 +12,7 @@ interface Article {
   imageUrl: string | null;
 }
 
-export default function EditArticle({ params }: { params: { id: string } }) {
+export default function EditArticle({ params }: { params: Promise<{ id: string }> }) {
   const [article, setArticle] = useState<Article | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
