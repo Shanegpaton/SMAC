@@ -8,6 +8,10 @@ const globalForPrisma = globalThis as unknown as {
 const isProduction = process.env.NODE_ENV === 'production';
 const isBuildTime = process.env.NODE_ENV === 'production' && !process.env.VERCEL;
 
+// Track connection attempts to prevent infinite loops
+let connectionAttempts = 0;
+const MAX_CONNECTION_ATTEMPTS = 3;
+
 let prisma: PrismaClient;
 
 try {
@@ -31,19 +35,28 @@ try {
   })
   
   // Test the connection immediately to catch any issues
-  if (isProduction) {
+  if (isProduction && connectionAttempts < MAX_CONNECTION_ATTEMPTS) {
     try {
+      connectionAttempts++;
       await prisma.$connect();
       console.log('Prisma client connected successfully');
+      connectionAttempts = 0; // Reset on success
     } catch (connectionError) {
-      console.error('Failed to connect to database:', connectionError);
+      console.error(`Failed to connect to database (attempt ${connectionAttempts}):`, connectionError);
       // If connection fails, try to disconnect and reconnect
       try {
         await prisma.$disconnect();
       } catch (disconnectError) {
         console.error('Failed to disconnect:', disconnectError);
       }
-      throw connectionError;
+      
+      // If we've tried too many times, just continue with the client
+      if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
+        console.warn('Max connection attempts reached, continuing with client');
+        connectionAttempts = 0;
+      } else {
+        throw connectionError;
+      }
     }
   }
 } catch (error) {

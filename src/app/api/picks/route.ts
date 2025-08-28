@@ -50,7 +50,13 @@ export async function GET() {
       try {
         // Try to disconnect and reconnect
         await prisma.$disconnect();
+        console.log('Disconnected from database');
+        
+        // Wait a moment before reconnecting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         await prisma.$connect();
+        console.log('Reconnected to database');
         
         // Retry the query once
         const retryPicks = await prisma.sMACArticle.findMany({
@@ -80,6 +86,16 @@ export async function GET() {
         });
       } catch (retryError) {
         console.error('Retry failed:', retryError);
+        
+        // If retry also fails, return empty array instead of error
+        console.log('Returning empty array due to connection issues');
+        return NextResponse.json([], {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        });
       }
     }
     
