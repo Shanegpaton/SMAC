@@ -15,12 +15,7 @@ async function getPick(id: string) {
     const session = await getServerSession(authOptions);
     const isAdmin = session?.user?.isAdmin;
 
-    // Add timeout protection for database queries
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Database query timeout')), 10000);
-    });
-
-    const pickPromise = prisma.SMACArticle.findUnique({
+    const pick = await prisma.SMACArticle.findUnique({
       where: { id },
       include: {
         author: {
@@ -30,9 +25,6 @@ async function getPick(id: string) {
         },
       },
     });
-
-    // Race between timeout and database query
-    const pick = await Promise.race([pickPromise, timeoutPromise]) as any;
 
     if (!pick) {
       notFound();

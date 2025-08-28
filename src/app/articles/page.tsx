@@ -6,12 +6,7 @@ export default async function ArticlesPage() {
   let articles = [];
   
   try {
-    // Add timeout protection for database queries
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Database query timeout')), 10000);
-    });
-
-    const articlesPromise = prisma.sMACArticle.findMany({
+    articles = await prisma.sMACArticle.findMany({
       where: {
         published: true,
       },
@@ -26,9 +21,6 @@ export default async function ArticlesPage() {
         createdAt: 'desc',
       },
     });
-
-    // Race between timeout and database query
-    articles = await Promise.race([articlesPromise, timeoutPromise]) as any;
   } catch (error) {
     console.error('Error fetching articles:', error);
     // Return empty array if database query fails
