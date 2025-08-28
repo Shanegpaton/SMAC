@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 
 // Helper function to get or create global SMAC coins record
@@ -18,11 +16,7 @@ async function getOrCreateGlobalSMACCoins() {
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    // Global SMAC coins should be visible to everyone (no authentication required)
     const globalSMACCoins = await getOrCreateGlobalSMACCoins();
     return NextResponse.json(globalSMACCoins);
   } catch (error) {

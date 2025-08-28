@@ -42,9 +42,7 @@ export default function Portfolio() {
 
   useEffect(() => {
     fetchPicks();
-    if (session?.user) {
-      fetchGlobalSMACCoins();
-    }
+    fetchGlobalSMACCoins(); // Always fetch global SMAC coins, regardless of login status
   }, [selectedYear, selectedWeek, session]);
 
   const fetchPicks = async () => {
