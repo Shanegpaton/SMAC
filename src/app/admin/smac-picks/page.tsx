@@ -54,7 +54,18 @@ export default function AdminSMACPicks() {
       if (selectedWeek) url.searchParams.set('week', selectedWeek.toString());
       if (selectedYear) url.searchParams.set('year', selectedYear.toString());
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+      
+      // Handle 304 Not Modified responses
+      if (response.status === 304) {
+        console.log('Using cached data for admin SMAC picks (304 Not Modified)');
+        return;
+      }
+      
       if (!response.ok) {
         throw new Error('Failed to fetch picks');
       }

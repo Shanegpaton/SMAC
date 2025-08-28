@@ -42,7 +42,18 @@ export default function MyPicks() {
 
   const fetchPicks = async () => {
     try {
-      const response = await fetch('/api/user-smac-picks');
+      const response = await fetch('/api/user-smac-picks', {
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+      
+      // Handle 304 Not Modified responses
+      if (response.status === 304) {
+        console.log('Using cached data for user picks (304 Not Modified)');
+        return;
+      }
+      
       if (!response.ok) throw new Error('Failed to fetch picks');
       const data = await response.json();
       setPicks(data);

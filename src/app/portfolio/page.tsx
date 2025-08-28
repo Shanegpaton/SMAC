@@ -69,6 +69,13 @@ export default function Portfolio() {
       
       clearTimeout(timeoutId);
       
+      // Handle 304 Not Modified responses (these are successful, just use cached data)
+      if (response.status === 304) {
+        console.log('Using cached data (304 Not Modified)');
+        // For 304 responses, we don't need to parse JSON since the browser will use cached data
+        return;
+      }
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);

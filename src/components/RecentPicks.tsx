@@ -32,7 +32,18 @@ export default function RecentPicks() {
   useEffect(() => {
     const fetchPicks = async () => {
       try {
-        const response = await fetch('/api/picks');
+        const response = await fetch('/api/picks', {
+          headers: {
+            'Cache-Control': 'no-cache',
+          }
+        });
+        
+        // Handle 304 Not Modified responses
+        if (response.status === 304) {
+          console.log('Using cached data for recent picks (304 Not Modified)');
+          return;
+        }
+        
         if (!response.ok) {
           throw new Error('Failed to fetch picks');
         }
