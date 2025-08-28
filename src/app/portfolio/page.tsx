@@ -55,6 +55,8 @@ export default function Portfolio() {
       const url = new URL('/api/smac-picks', window.location.origin);
       if (selectedWeek) url.searchParams.set('week', selectedWeek.toString());
       if (selectedYear) url.searchParams.set('year', selectedYear.toString());
+      // Add cache-busting parameter to ensure fresh data
+      url.searchParams.set('_t', Date.now().toString());
 
       // Add timeout to the fetch request
       const controller = new AbortController();
@@ -108,7 +110,16 @@ export default function Portfolio() {
 
   const fetchGlobalSMACCoins = async () => {
     try {
-      const response = await fetch('/api/global-smac-coins');
+      // Add cache-busting parameter to ensure fresh data
+      const url = new URL('/api/global-smac-coins', window.location.origin);
+      url.searchParams.set('_t', Date.now().toString());
+      
+      const response = await fetch(url, {
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+      
       if (!response.ok) {
         throw new Error('Failed to fetch global SMAC coins');
       }

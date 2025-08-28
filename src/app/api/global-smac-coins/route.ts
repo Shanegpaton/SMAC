@@ -30,7 +30,13 @@ export async function GET() {
     const globalSMACCoins = await Promise.race([globalSMACCoinsPromise, timeoutPromise]) as any;
     
     console.log('Global SMAC Coins API: Successfully fetched data');
-    return NextResponse.json(globalSMACCoins);
+    return NextResponse.json(globalSMACCoins, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   } catch (error) {
     console.error('Error fetching global SMAC coins:', error);
     return NextResponse.json(

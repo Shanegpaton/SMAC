@@ -83,6 +83,8 @@ export default function MyPosts() {
       const url = new URL('/api/user-smac-picks', window.location.origin);
       if (selectedWeek) url.searchParams.set('week', selectedWeek.toString());
       if (selectedYear) url.searchParams.set('year', selectedYear.toString());
+      // Add cache-busting parameter to ensure fresh data
+      url.searchParams.set('_t', Date.now().toString());
 
       const response = await fetch(url, {
         headers: {
@@ -109,7 +111,15 @@ export default function MyPosts() {
 
   const fetchUserSmacCoins = async () => {
     try {
-      const response = await fetch('/api/user/smac-coins');
+      // Add cache-busting parameter to ensure fresh data
+      const url = new URL('/api/user/smac-coins', window.location.origin);
+      url.searchParams.set('_t', Date.now().toString());
+      
+      const response = await fetch(url, {
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch SMAC coins');
       }

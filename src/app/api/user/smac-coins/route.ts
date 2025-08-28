@@ -26,7 +26,13 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ smacCoins: user.smacCoins });
+    return NextResponse.json({ smacCoins: user.smacCoins }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   } catch (error) {
     console.error('Error fetching user SMAC coins:', error);
     return NextResponse.json(
