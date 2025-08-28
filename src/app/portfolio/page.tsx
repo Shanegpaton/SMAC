@@ -45,20 +45,55 @@ export default function Portfolio() {
     fetchGlobalSMACCoins(); // Always fetch global SMAC coins, regardless of login status
   }, [selectedYear, selectedWeek, session]);
 
-  const fetchPicks = async () => {
+  const fetchPicks = async (retryCount = 0) => {
     try {
       setLoading(true);
+      setError(null);
+      
+      console.log(`Fetching SMAC picks (attempt ${retryCount + 1})`);
+      
       const url = new URL('/api/smac-picks', window.location.origin);
       if (selectedWeek) url.searchParams.set('week', selectedWeek.toString());
       if (selectedYear) url.searchParams.set('year', selectedYear.toString());
 
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch picks');
+      // Add timeout to the fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
+      console.log('Fetched SMAC picks data:', data);
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid data format received');
+      }
+      
       setPicks(data);
+      setError(null);
     } catch (err) {
-      setError('Failed to load picks');
-      console.error('Error fetching picks:', err);
+      console.error('Error fetching SMAC picks:', err);
+      
+      // Retry logic for network errors or timeouts
+      if (retryCount < 2 && (err instanceof Error && (err.name === 'AbortError' || err.message.includes('Failed to fetch')))) {
+        console.log(`Retrying SMAC picks... (${retryCount + 1}/2)`);
+        setTimeout(() => fetchPicks(retryCount + 1), 1000 * (retryCount + 1)); // Exponential backoff
+        return;
+      }
+      
+      setError(err instanceof Error ? err.message : 'Failed to load picks');
     } finally {
       setLoading(false);
     }
@@ -128,7 +163,17 @@ export default function Portfolio() {
   }
 
   if (error) {
-    return <div className="text-center py-8 text-red-500">{error}</div>;
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-4">{error}</div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
