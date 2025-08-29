@@ -129,12 +129,12 @@ export default function CreatePick() {
           <h1 className="text-3xl font-bold text-black">Create SMAC Pick</h1>
           <div className="flex items-center space-x-6">
             <div className="bg-gray-100 px-4 py-2 rounded-lg">
-              <span className="text-gray-600">SMAC Coins:</span>
-              <span className="ml-2 font-semibold text-gray-900">{userSmacCoins}</span>
+                          <span className="text-black">SMAC Coins:</span>
+            <span className="ml-2 font-semibold text-black">{userSmacCoins}</span>
             </div>
             <button
               onClick={() => router.push('/my-posts')}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-md hover:bg-gray-50"
             >
               Back to My Posts
             </button>
@@ -149,7 +149,7 @@ export default function CreatePick() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="sport" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="sport" className="block text-sm font-medium text-black">
               Sport
             </label>
             <input
@@ -163,7 +163,7 @@ export default function CreatePick() {
           </div>
 
           <div>
-            <label htmlFor="game" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="game" className="block text-sm font-medium text-black">
               Game
             </label>
             <input
@@ -177,7 +177,7 @@ export default function CreatePick() {
           </div>
 
           <div>
-            <label htmlFor="bet" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="bet" className="block text-sm font-medium text-black">
               Bet
             </label>
             <input
@@ -192,7 +192,7 @@ export default function CreatePick() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="odds" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="odds" className="block text-sm font-medium text-black">
                 Odds
               </label>
               <input
@@ -206,7 +206,7 @@ export default function CreatePick() {
             </div>
 
             <div>
-              <label htmlFor="smacCoins" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="smacCoins" className="block text-sm font-medium text-black">
                 SMAC Coins
               </label>
               <input
@@ -222,7 +222,7 @@ export default function CreatePick() {
           </div>
 
           <div>
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="date" className="block text-sm font-medium text-black">
               Date
             </label>
             <input

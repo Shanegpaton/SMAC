@@ -51,7 +51,7 @@ export default function CreateArticle() {
       {error && <div className="text-red-500 mb-4">{error}</div>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="title" className="block text-sm font-medium text-black">
             Title
           </label>
           <input
@@ -64,7 +64,7 @@ export default function CreateArticle() {
           />
         </div>
         <div>
-          <label htmlFor="content" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="content" className="block text-sm font-medium text-black">
             Content
           </label>
           <textarea
@@ -77,7 +77,7 @@ export default function CreateArticle() {
           />
         </div>
         <div>
-          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="imageUrl" className="block text-sm font-medium text-black">
             Image URL (optional)
           </label>
           <input

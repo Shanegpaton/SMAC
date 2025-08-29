@@ -192,28 +192,28 @@ export default function RecentPicks() {
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-bold text-black">{pick.title}</h3>
-              <span className="text-sm text-gray-500">
-                {new Date(pick.gameDate).toLocaleDateString()}
-              </span>
+                              <span className="text-sm text-black">
+                  {new Date(pick.gameDate).toLocaleDateString()}
+                </span>
             </div>
             <div className="mb-4">
-              <p className="text-gray-600">{pick.description}</p>
+              <p className="text-black">{pick.description}</p>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="text-center">
                 <p className="font-semibold">{pick.homeTeam}</p>
-                <p className="text-sm text-gray-500">Home</p>
+                <p className="text-sm text-black">Home</p>
               </div>
               <div className="text-center">
                 <p className="font-semibold">{pick.awayTeam}</p>
-                <p className="text-sm text-gray-500">Away</p>
+                <p className="text-sm text-black">Away</p>
               </div>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg">
               <p className="font-semibold text-blue-800">Our Pick: {pick.pick}</p>
               <p className="mt-2 text-blue-700 line-clamp-2">{pick.reasoning}</p>
               <div className="flex justify-between items-center mt-3">
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                <div className="flex items-center space-x-4 text-sm text-black">
                   <div className="flex items-center space-x-1">
                     <span className="text-green-600">▲</span>
                     <span>{pick.upvotes}</span>

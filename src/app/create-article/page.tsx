@@ -59,7 +59,7 @@ export default function CreateArticle() {
           <h1 className="text-3xl font-bold text-black">Create Article</h1>
           <button
             onClick={() => router.push('/my-posts')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             Back to My Posts
           </button>

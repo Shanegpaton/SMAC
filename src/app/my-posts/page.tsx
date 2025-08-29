@@ -229,8 +229,8 @@ export default function MyPosts() {
         <h1 className="text-3xl font-bold text-black">Profile</h1>
         <div className="flex items-center space-x-6">
           <div className="bg-gray-100 px-4 py-2 rounded-lg">
-            <span className="text-gray-600">SMAC Coins:</span>
-            <span className="ml-2 font-semibold text-gray-900">{userSmacCoins}</span>
+            <span className="text-black">SMAC Coins:</span>
+            <span className="ml-2 font-semibold text-black">{userSmacCoins}</span>
           </div>
           <button
             onClick={() => router.push('/create-pick')}

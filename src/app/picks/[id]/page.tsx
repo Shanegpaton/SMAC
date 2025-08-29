@@ -62,7 +62,7 @@ export default async function PickPage({ params }: PickPageProps) {
         <div className="p-8">
           <h1 className="text-3xl font-bold mb-4 text-black">{pick.title}</h1>
           
-          <div className="flex items-center gap-4 mb-6 text-gray-600">
+          <div className="flex items-center gap-4 mb-6 text-black">
             <span>By {pick.author.name}</span>
             <span>•</span>
             <span>{new Date(pick.gameDate).toLocaleDateString()}</span>
@@ -71,18 +71,18 @@ export default async function PickPage({ params }: PickPageProps) {
           <div className="grid grid-cols-2 gap-6 mb-8">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-lg font-semibold">{pick.homeTeam}</p>
-              <p className="text-sm text-gray-500">Home</p>
+              <p className="text-sm text-black">Home</p>
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-lg font-semibold">{pick.awayTeam}</p>
-              <p className="text-sm text-gray-500">Away</p>
+              <p className="text-sm text-black">Away</p>
             </div>
           </div>
 
           <div className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-black">Our Pick</h2>
             <p className="text-xl font-bold text-blue-600 mb-2">{pick.pick}</p>
-            <p className="text-gray-700 whitespace-pre-wrap">{pick.reasoning}</p>
+            <p className="text-black whitespace-pre-wrap">{pick.reasoning}</p>
           </div>
         </div>
       </article>

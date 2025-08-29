@@ -158,7 +158,7 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
         <div className="p-6 md:p-8">
           <h1 className="text-2xl md:text-3xl font-bold mb-4 text-black">{article.title}</h1>
           
-          <div className="flex items-center gap-4 mb-6 text-gray-600">
+          <div className="flex items-center gap-4 mb-6 text-black">
             <span>By {article.author.name}</span>
             <span>•</span>
             <span>{new Date(article.gameDate).toLocaleDateString()}</span>
@@ -167,18 +167,18 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
           <div className="grid grid-cols-2 gap-4 md:gap-6 mb-8">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-lg font-semibold">{article.homeTeam}</p>
-              <p className="text-sm text-gray-500">Home</p>
+              <p className="text-sm text-black">Home</p>
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-lg font-semibold">{article.awayTeam}</p>
-              <p className="text-sm text-gray-500">Away</p>
+              <p className="text-sm text-black">Away</p>
             </div>
           </div>
 
           <div className="mb-8">
             <h2 className="text-xl md:text-2xl font-semibold mb-4 text-black">Our Pick</h2>
             <p className="text-lg md:text-xl font-bold text-blue-600 mb-2">{article.pick}</p>
-            <p className="text-gray-700 whitespace-pre-wrap">{article.reasoning}</p>
+            <p className="text-black whitespace-pre-wrap">{article.reasoning}</p>
           </div>
 
           {/* Voting Section */}
@@ -242,17 +242,17 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
               {comments.map((comment) => (
                 <div key={comment.id} className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="font-semibold text-gray-800">{comment.user.name}</span>
-                    <span className="text-sm text-gray-500">
+                    <span className="font-semibold text-black">{comment.user.name}</span>
+                    <span className="text-sm text-black">
                       {new Date(comment.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-gray-700">{comment.content}</p>
+                  <p className="text-black">{comment.content}</p>
                 </div>
               ))}
               
               {comments.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No comments yet. Be the first to share your thoughts!</p>
+                <p className="text-black text-center py-4">No comments yet. Be the first to share your thoughts!</p>
               )}
             </div>
           </div>
