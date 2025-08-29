@@ -18,6 +18,9 @@ interface GamePick {
   createdAt: string;
   imageUrl: string | null;
   published: boolean;
+  upvotes: number;
+  downvotes: number;
+  commentCount: number;
   author?: {
     name: string;
     email: string;
@@ -209,7 +212,23 @@ export default function RecentPicks() {
             <div className="bg-blue-50 p-4 rounded-lg">
               <p className="font-semibold text-blue-800">Our Pick: {pick.pick}</p>
               <p className="mt-2 text-blue-700 line-clamp-2">{pick.reasoning}</p>
-              <p className="mt-2 text-blue-600 text-sm hover:underline">Read full analysis →</p>
+              <div className="flex justify-between items-center mt-3">
+                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <div className="flex items-center space-x-1">
+                    <span className="text-green-600">▲</span>
+                    <span>{pick.upvotes}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-red-600">▼</span>
+                    <span>{pick.downvotes}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-blue-600">💬</span>
+                    <span>{pick.commentCount}</span>
+                  </div>
+                </div>
+                <p className="text-blue-600 text-sm hover:underline">Read full analysis →</p>
+              </div>
             </div>
           </div>
         </Link>

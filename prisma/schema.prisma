@@ -23,6 +23,8 @@ model User {
   smacArticles  SMACArticle[]
   smacPicks     SMACPick[]
   userSMACPicks UserSMACPick[]
+  articleVotes  ArticleVote[]
+  articleComments ArticleComment[]
 }
 
 model Account {
@@ -66,6 +68,8 @@ model SMACArticle {
   updatedAt      DateTime @updatedAt
   authorId       String
   author         User     @relation(fields: [authorId], references: [id])
+  votes          ArticleVote[]
+  comments       ArticleComment[]
 }
 
 model SMACPick {
@@ -124,4 +128,33 @@ model SMACCoinsDistribution {
   lastDistributed DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model ArticleVote {
+  id        String   @id @default(cuid())
+  vote      Int      // 1 for upvote, -1 for downvote
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  articleId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   SMACArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@index([articleId])
+  @@index([userId])
+}
+
+model ArticleComment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  articleId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   SMACArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@index([userId])
 }

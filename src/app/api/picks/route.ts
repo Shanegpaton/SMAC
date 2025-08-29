@@ -23,12 +23,34 @@ export async function GET() {
             name: true,
           },
         },
+        votes: true,
+        _count: {
+          select: {
+            votes: true,
+            comments: true,
+          },
+        },
       },
     });
 
-    console.log('Picks API: Found', picks.length, 'picks');
+    // Calculate vote counts for each article
+    const picksWithVotes = picks.map(article => {
+      const upvotes = article.votes.filter(vote => vote.vote === 1).length;
+      const downvotes = article.votes.filter(vote => vote.vote === -1).length;
+      
+      return {
+        ...article,
+        upvotes,
+        downvotes,
+        commentCount: article._count.comments,
+        votes: undefined, // Remove the votes array from response
+        _count: undefined, // Remove the _count from response
+      };
+    });
 
-    return NextResponse.json(picks, {
+    console.log('Picks API: Found', picksWithVotes.length, 'picks');
+
+    return NextResponse.json(picksWithVotes, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
