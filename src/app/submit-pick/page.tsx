@@ -126,7 +126,7 @@ export default function SubmitPick() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto max-h-[80vh]">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
             Title
@@ -137,7 +137,7 @@ export default function SubmitPick() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="e.g., NFL Week 5: Chiefs vs Bills"
           />
         </div>
@@ -153,7 +153,7 @@ export default function SubmitPick() {
               value={gameDate}
               onChange={(e) => setGameDate(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -167,7 +167,7 @@ export default function SubmitPick() {
               value={homeTeam}
               onChange={(e) => setHomeTeam(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="e.g., Kansas City Chiefs"
             />
           </div>
@@ -182,7 +182,7 @@ export default function SubmitPick() {
               value={awayTeam}
               onChange={(e) => setAwayTeam(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="e.g., Buffalo Bills"
             />
           </div>
@@ -197,7 +197,7 @@ export default function SubmitPick() {
               value={pick}
               onChange={(e) => setPick(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="e.g., Chiefs -3.5"
             />
           </div>
@@ -213,7 +213,7 @@ export default function SubmitPick() {
             onChange={(e) => setReasoning(e.target.value)}
             required
             rows={5}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Explain your analysis and reasoning for this pick"
           />
         </div>

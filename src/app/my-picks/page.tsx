@@ -124,8 +124,8 @@ export default function MyPicks() {
       </div>
 
       {isCreating && (
-        <form onSubmit={handleCreatePick} className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleCreatePick} className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8 overflow-y-auto max-h-[80vh]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Date & Time
@@ -134,7 +134,7 @@ export default function MyPicks() {
                 type="datetime-local"
                 value={newPick.date}
                 onChange={(e) => setNewPick({ ...newPick, date: e.target.value })}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
@@ -146,7 +146,7 @@ export default function MyPicks() {
                 type="text"
                 value={newPick.sport}
                 onChange={(e) => setNewPick({ ...newPick, sport: e.target.value })}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
@@ -158,7 +158,7 @@ export default function MyPicks() {
                 type="text"
                 value={newPick.game}
                 onChange={(e) => setNewPick({ ...newPick, game: e.target.value })}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
@@ -170,7 +170,7 @@ export default function MyPicks() {
                 type="text"
                 value={newPick.bet}
                 onChange={(e) => setNewPick({ ...newPick, bet: e.target.value })}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
@@ -183,7 +183,7 @@ export default function MyPicks() {
                 step="0.01"
                 value={newPick.odds}
                 onChange={(e) => setNewPick({ ...newPick, odds: e.target.value })}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
@@ -195,7 +195,7 @@ export default function MyPicks() {
                 type="number"
                 value={newPick.smacCoins}
                 onChange={(e) => setNewPick({ ...newPick, smacCoins: e.target.value })}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
