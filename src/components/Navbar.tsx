@@ -21,34 +21,34 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="text-xl font-bold" onClick={closeMenu}>
+          <Link href="/" className="text-xl font-bold text-white" onClick={closeMenu}>
             SMAC
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6">
-            <Link href="/" className="hover:text-gray-300 transition-colors">
+            <Link href="/" className="text-white hover:text-gray-300 transition-colors">
               Home
             </Link>
-            <Link href="/portfolio" className="hover:text-gray-300 transition-colors">
+            <Link href="/portfolio" className="text-white hover:text-gray-300 transition-colors">
               Portfolio
             </Link>
-            <Link href="/traders" className="hover:text-gray-300 transition-colors">
+            <Link href="/traders" className="text-white hover:text-gray-300 transition-colors">
               Traders
             </Link>
-            <Link href="/about" className="hover:text-gray-300 transition-colors">
+            <Link href="/about" className="text-white hover:text-gray-300 transition-colors">
               About
             </Link>
-            <Link href="/submit-pick" className="hover:text-gray-300 transition-colors">
+            <Link href="/submit-pick" className="text-white hover:text-gray-300 transition-colors">
               Submit SMAC Article
             </Link>
             {session?.user?.isAdmin && (
-              <Link href="/admin" className="hover:text-gray-300 transition-colors">
+              <Link href="/admin" className="text-white hover:text-gray-300 transition-colors">
                 Admin
               </Link>
             )}
             {session && (
-              <Link href="/my-posts" className="hover:text-gray-300 transition-colors">
+              <Link href="/my-posts" className="text-white hover:text-gray-300 transition-colors">
                 My Posts
               </Link>
             )}
@@ -57,10 +57,10 @@ export default function Navbar() {
           {/* Desktop Auth Section */}
           <div className="hidden md:flex items-center space-x-4">
             {status === 'loading' ? (
-              <span>Loading...</span>
+              <span className="text-white">Loading...</span>
             ) : session ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm">{session.user?.name || session.user?.email}</span>
+                <span className="text-sm text-white">{session.user?.name || session.user?.email}</span>
                 <button
                   onClick={() => signOut()}
                   className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm transition-colors"
@@ -89,10 +89,10 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-4">
             {status === 'loading' ? (
-              <span className="text-sm">Loading...</span>
+              <span className="text-sm text-white">Loading...</span>
             ) : session ? (
               <div className="flex items-center space-x-2">
-                <span className="text-sm truncate max-w-20">{session.user?.name || session.user?.email}</span>
+                <span className="text-sm truncate max-w-20 text-white">{session.user?.name || session.user?.email}</span>
                 <button
                   onClick={() => signOut()}
                   className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs transition-colors"
@@ -133,64 +133,64 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Navigation Menu */}
-        <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'} pb-4`}>
-          <div className="flex flex-col space-y-3 pt-2 border-t border-gray-700">
-            <Link 
-              href="/" 
-              className="hover:text-gray-300 transition-colors py-2"
-              onClick={closeMenu}
-            >
-              Home
-            </Link>
-            <Link 
-              href="/portfolio" 
-              className="hover:text-gray-300 transition-colors py-2"
-              onClick={closeMenu}
-            >
-              Portfolio
-            </Link>
-            <Link 
-              href="/traders" 
-              className="hover:text-gray-300 transition-colors py-2"
-              onClick={closeMenu}
-            >
-              Traders
-            </Link>
-            <Link 
-              href="/about" 
-              className="hover:text-gray-300 transition-colors py-2"
-              onClick={closeMenu}
-            >
-              About
-            </Link>
-            <Link 
-              href="/submit-pick" 
-              className="hover:text-gray-300 transition-colors py-2"
-              onClick={closeMenu}
-            >
-              Submit SMAC Article
-            </Link>
-            {session?.user?.isAdmin && (
-              <Link 
-                href="/admin" 
-                className="hover:text-gray-300 transition-colors py-2"
-                onClick={closeMenu}
-              >
-                Admin
-              </Link>
-            )}
-            {session && (
-              <Link 
-                href="/my-posts" 
-                className="hover:text-gray-300 transition-colors py-2"
-                onClick={closeMenu}
-              >
-                My Posts
-              </Link>
-            )}
-          </div>
-        </div>
+                       {/* Mobile Navigation Menu */}
+               <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'} pb-4`}>
+                 <div className="flex flex-col space-y-3 pt-2 border-t border-gray-700">
+                   <Link
+                     href="/"
+                     className="text-white hover:text-gray-300 transition-colors py-2"
+                     onClick={closeMenu}
+                   >
+                     Home
+                   </Link>
+                   <Link
+                     href="/portfolio"
+                     className="text-white hover:text-gray-300 transition-colors py-2"
+                     onClick={closeMenu}
+                   >
+                     Portfolio
+                   </Link>
+                   <Link
+                     href="/traders"
+                     className="text-white hover:text-gray-300 transition-colors py-2"
+                     onClick={closeMenu}
+                   >
+                     Traders
+                   </Link>
+                   <Link
+                     href="/about"
+                     className="text-white hover:text-gray-300 transition-colors py-2"
+                     onClick={closeMenu}
+                   >
+                     About
+                   </Link>
+                   <Link
+                     href="/submit-pick"
+                     className="text-white hover:text-gray-300 transition-colors py-2"
+                     onClick={closeMenu}
+                   >
+                     Submit SMAC Article
+                   </Link>
+                   {session?.user?.isAdmin && (
+                     <Link
+                       href="/admin"
+                       className="text-white hover:text-gray-300 transition-colors py-2"
+                       onClick={closeMenu}
+                     >
+                       Admin
+                     </Link>
+                   )}
+                   {session && (
+                     <Link
+                       href="/my-posts"
+                       className="text-white hover:text-gray-300 transition-colors py-2"
+                       onClick={closeMenu}
+                     >
+                       My Posts
+                     </Link>
+                   )}
+                 </div>
+               </div>
       </div>
     </nav>
   );
