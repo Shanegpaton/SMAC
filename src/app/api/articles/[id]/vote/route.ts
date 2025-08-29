@@ -69,8 +69,17 @@ export async function POST(
     }
   } catch (error) {
     console.error('Error handling vote:', error);
+    
+    // Check if it's a table doesn't exist error
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      return NextResponse.json(
+        { error: 'Database tables not created yet. Please run the SQL migration in Supabase.' },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -114,8 +123,18 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching votes:', error);
+    
+    // Check if it's a table doesn't exist error
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      return NextResponse.json({
+        upvotes: 0,
+        downvotes: 0,
+        userVote: null,
+      });
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
