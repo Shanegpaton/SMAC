@@ -95,13 +95,13 @@ export default function Traders() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Our Traders</h1>
+        <h1 className="text-3xl font-bold mb-8 text-black">Our Traders</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {traders.map((trader) => (
             <div key={trader.id} className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-start mb-4">
-                <h2 className="text-2xl font-semibold">{trader.name}</h2>
+                <h2 className="text-2xl font-semibold text-black">{trader.name}</h2>
                 <div className="text-right">
                   <div className="text-sm text-gray-500">SMAC Coins</div>
                   <div className="text-xl font-bold text-indigo-600">{trader.smacCoins}</div>

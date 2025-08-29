@@ -1,7 +1,7 @@
 export default function About() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <h1 className="text-4xl font-bold mb-8">About SMAC</h1>
+      <h1 className="text-4xl font-bold mb-8 text-black">About SMAC</h1>
       
       <div className="prose lg:prose-xl text-gray-700 space-y-6">
         <p>

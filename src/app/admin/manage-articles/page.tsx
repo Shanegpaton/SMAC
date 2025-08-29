@@ -85,7 +85,7 @@ export default function ManageArticles() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+          <h1 className="text-2xl font-bold mb-4 text-black">Loading...</h1>
         </div>
       </div>
     );
@@ -95,7 +95,7 @@ export default function ManageArticles() {
     <div className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Manage Articles</h1>
+          <h1 className="text-3xl font-bold text-black">Manage Articles</h1>
           <div className="space-x-4">
             <button
               onClick={() => router.push('/admin/create-article')}

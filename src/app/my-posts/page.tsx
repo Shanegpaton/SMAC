@@ -226,7 +226,7 @@ export default function MyPosts() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Profile</h1>
+        <h1 className="text-3xl font-bold text-black">Profile</h1>
         <div className="flex items-center space-x-6">
           <div className="bg-gray-100 px-4 py-2 rounded-lg">
             <span className="text-gray-600">SMAC Coins:</span>

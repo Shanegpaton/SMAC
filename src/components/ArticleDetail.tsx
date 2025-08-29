@@ -156,7 +156,7 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
           </div>
         )}
         <div className="p-6 md:p-8">
-          <h1 className="text-2xl md:text-3xl font-bold mb-4">{article.title}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-4 text-black">{article.title}</h1>
           
           <div className="flex items-center gap-4 mb-6 text-gray-600">
             <span>By {article.author.name}</span>
@@ -176,14 +176,14 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-xl md:text-2xl font-semibold mb-4">Our Pick</h2>
+            <h2 className="text-xl md:text-2xl font-semibold mb-4 text-black">Our Pick</h2>
             <p className="text-lg md:text-xl font-bold text-blue-600 mb-2">{article.pick}</p>
             <p className="text-gray-700 whitespace-pre-wrap">{article.reasoning}</p>
           </div>
 
           {/* Voting Section */}
           <div className="border-t border-gray-200 pt-6 mb-8">
-            <h3 className="text-lg font-semibold mb-4">Rate this analysis</h3>
+            <h3 className="text-lg font-semibold mb-4 text-black">Rate this analysis</h3>
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => handleVote(1)}
@@ -214,7 +214,7 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
 
           {/* Comments Section */}
           <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-semibold mb-4">Comments ({comments.length})</h3>
+            <h3 className="text-lg font-semibold mb-4 text-black">Comments ({comments.length})</h3>
             
             {/* Comment Form */}
             {session?.user && (

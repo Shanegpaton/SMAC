@@ -605,7 +605,7 @@ export default function AdminPage() {
   if (!session?.user?.isAdmin) {
     return (
       <div className="text-center py-8">
-        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+        <h1 className="text-2xl font-bold mb-4 text-black">Access Denied</h1>
         <p>You do not have permission to access this page.</p>
       </div>
     );
@@ -621,7 +621,7 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-8 text-black">Admin Dashboard</h1>
       
       <div className="mb-8">
         <div className="border-b border-gray-200">

@@ -191,7 +191,7 @@ export default function RecentPicks() {
           )}
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold">{pick.title}</h3>
+              <h3 className="text-xl font-bold text-black">{pick.title}</h3>
               <span className="text-sm text-gray-500">
                 {new Date(pick.gameDate).toLocaleDateString()}
               </span>

@@ -205,12 +205,12 @@ export default function Portfolio() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Portfolio</h1>
+        <h1 className="text-3xl font-bold mb-8 text-black">Portfolio</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* SMAC Coins Card */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">SMAC Coins</h2>
+            <h2 className="text-xl font-semibold text-black mb-2">SMAC Coins</h2>
             <div className="flex items-center justify-between">
               <span className="text-3xl font-bold text-indigo-600">{globalSMACCoins}</span>
               <span className="text-gray-500">Balance</span>
@@ -221,7 +221,7 @@ export default function Portfolio() {
         </div>
 
         <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">SMAC Portfolio</h2>
+          <h2 className="text-2xl font-bold mb-4 text-black">SMAC Portfolio</h2>
 
           <div className="mb-8 flex gap-4">
             <div>
