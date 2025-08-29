@@ -23,30 +23,16 @@ export async function GET() {
             name: true,
           },
         },
-        votes: true,
-        _count: {
-          select: {
-            votes: true,
-            comments: true,
-          },
-        },
       },
     });
 
-    // Calculate vote counts for each article
-    const picksWithVotes = picks.map(article => {
-      const upvotes = article.votes.filter(vote => vote.vote === 1).length;
-      const downvotes = article.votes.filter(vote => vote.vote === -1).length;
-      
-      return {
-        ...article,
-        upvotes,
-        downvotes,
-        commentCount: article._count.comments,
-        votes: undefined, // Remove the votes array from response
-        _count: undefined, // Remove the _count from response
-      };
-    });
+    // Add placeholder vote counts until migration is applied
+    const picksWithVotes = picks.map(article => ({
+      ...article,
+      upvotes: 0,
+      downvotes: 0,
+      commentCount: 0,
+    }));
 
     console.log('Picks API: Found', picksWithVotes.length, 'picks');
 
