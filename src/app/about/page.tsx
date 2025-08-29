@@ -1,38 +1,25 @@
 export default function About() {
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <h1 className="text-3xl font-bold">About SMAC</h1>
+    <div className="max-w-4xl mx-auto px-6 py-8">
+      <h1 className="text-4xl font-bold mb-8">About SMAC</h1>
       
-      <section className="space-y-4">
-        <h2 className="text-2xl font-semibold">Who We Are</h2>
-        <p className="text-gray-700">
-          SMAC (Sports Market Analytics Club) is a dedicated group of sports betting analysts and traders who combine data-driven insights with deep sports knowledge to provide high-quality betting analysis and picks.
+      <div className="prose lg:prose-xl text-gray-700 space-y-6">
+        <p>
+          The Sports Modeling and Analytics Club (SMAC) at Miami University is a student-led organization dedicated to exploring the intersection of sports, data, and decision-making. We bring together students who are passionate about sports and interested in learning how analytics can be used to evaluate performance, predict outcomes, and generate insights.
         </p>
-      </section>
-      
-      <section className="space-y-4">
-        <h2 className="text-2xl font-semibold">Our Mission</h2>
-        <p className="text-gray-700">
-          Our mission is to provide transparent, data-backed sports betting analysis while maintaining the highest standards of integrity and professionalism. We believe in sharing our knowledge and helping others make informed betting decisions.
+        
+        <p>
+          Our members have the opportunity to manage their own portfolio of predictions, while also contributing to the club's collective portfolio by writing articles that highlight sports analytics and high-level insights.
         </p>
-      </section>
-      
-      <section className="space-y-4">
-        <h2 className="text-2xl font-semibold">What We Do</h2>
-        <ul className="list-disc list-inside space-y-2 text-gray-700">
-          <li>Provide detailed sports betting analysis and picks</li>
-          <li>Track and share our betting performance transparently</li>
-          <li>Publish educational content about sports betting strategies</li>
-          <li>Maintain a community of like-minded sports betting enthusiasts</li>
-        </ul>
-      </section>
-      
-      <section className="space-y-4">
-        <h2 className="text-2xl font-semibold">Our Approach</h2>
-        <p className="text-gray-700">
-          We combine advanced statistical analysis with deep sports knowledge to identify value in the betting markets. Our team of experienced traders specializes in different sports and betting markets, ensuring comprehensive coverage across major sports leagues.
+        
+        <p>
+          SMAC also provides opportunities for professional development through guest speakers who share their knowledge to help members improve.
         </p>
-      </section>
+        
+        <p>
+          Whether you're a seasoned stats enthusiast, an obsessed sports fan curious about the numbers behind the game, or just someone who wants to try something new with a group of motivated people, SMAC is a place to learn, collaborate, and apply analytical thinking to the sports you love.
+        </p>
+      </div>
     </div>
   )
 } 
