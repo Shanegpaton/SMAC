@@ -7,12 +7,93 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return NextResponse.json({ error: 'Commenting temporarily disabled - migration in progress' }, { status: 503 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const { content } = await request.json();
+
+    if (!content || content.trim().length === 0) {
+      return NextResponse.json({ error: 'Comment content is required' }, { status: 400 });
+    }
+
+    // Check if article exists
+    const article = await prisma.sMACArticle.findUnique({
+      where: { id },
+    });
+
+    if (!article) {
+      return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+    }
+
+    // Create comment
+    const comment = await prisma.articleComment.create({
+      data: {
+        content: content.trim(),
+        userId: session.user.id,
+        articleId: id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(comment, { status: 201 });
+  } catch (error) {
+    console.error('Error creating comment:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return NextResponse.json([]);
+  try {
+    const { id } = await params;
+
+    // Check if article exists
+    const article = await prisma.sMACArticle.findUnique({
+      where: { id },
+    });
+
+    if (!article) {
+      return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+    }
+
+    // Get comments
+    const comments = await prisma.articleComment.findMany({
+      where: { articleId: id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json(comments);
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
