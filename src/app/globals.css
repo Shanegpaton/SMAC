@@ -45,3 +45,12 @@ body {
 .bg-gray-800 * {
   color: inherit;
 }
+
+/* Ensure navbar text is white */
+nav *,
+nav .text-white,
+nav a,
+nav span,
+nav button {
+  color: inherit !important;
+}
