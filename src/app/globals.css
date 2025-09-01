@@ -46,11 +46,14 @@ body {
   color: inherit;
 }
 
-/* Ensure navbar text is white */
+/* Ensure navbar text is white - override global black rule */
+nav,
 nav *,
 nav .text-white,
 nav a,
 nav span,
-nav button {
-  color: inherit !important;
+nav button,
+nav div,
+nav p {
+  color: white !important;
 }
