@@ -13,7 +13,7 @@ export async function GET() {
       );
     }
 
-    const articles = await prisma.article.findMany({
+    const articles = await prisma.sMACArticle.findMany({
       where: {
         publishRequest: true,
         published: false,

@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const article = await prisma.article.findUnique({
+    const article = await prisma.sMACArticle.findUnique({
       where: { id: params.id },
       include: {
         author: {
@@ -48,20 +48,27 @@ export async function PUT(
       );
     }
 
-    const { title, content, imageUrl } = await request.json();
+    const { title, gameDate, homeTeam, awayTeam, pick, reasoning, imageUrl } = await request.json();
 
-    if (!title || !content) {
+    if (!title || !gameDate || !homeTeam || !awayTeam || !pick || !reasoning) {
       return NextResponse.json(
-        { error: 'Title and content are required' },
+        { error: 'All fields are required' },
         { status: 400 }
       );
     }
 
-    const article = await prisma.article.update({
+    // Parse gameDate as a Date object
+    const parsedGameDate = new Date(gameDate);
+
+    const article = await prisma.sMACArticle.update({
       where: { id: params.id },
       data: {
         title,
-        content,
+        gameDate: parsedGameDate,
+        homeTeam,
+        awayTeam,
+        pick,
+        reasoning,
         imageUrl,
       },
     });
@@ -91,7 +98,7 @@ export async function DELETE(
     }
 
     // Check if the article exists and belongs to the user
-    const article = await prisma.article.findUnique({
+    const article = await prisma.sMACArticle.findUnique({
       where: { id: params.id },
       select: { authorId: true }
     });
@@ -111,7 +118,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.article.delete({
+    await prisma.sMACArticle.delete({
       where: { id: params.id },
     });
 

@@ -20,7 +20,7 @@ export async function POST(
     const articleId = params.id;
 
     if (action === 'approve') {
-      const article = await prisma.article.update({
+      const article = await prisma.sMACArticle.update({
         where: { id: articleId },
         data: {
           published: true,
@@ -31,7 +31,7 @@ export async function POST(
 
       return NextResponse.json(article);
     } else if (action === 'reject') {
-      const article = await prisma.article.update({
+      const article = await prisma.sMACArticle.update({
         where: { id: articleId },
         data: {
           publishRequest: false,

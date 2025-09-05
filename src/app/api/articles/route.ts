@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const articles = await prisma.article.findMany({
+    const articles = await prisma.sMACArticle.findMany({
       where: {
         published: true,
       },
@@ -42,23 +42,31 @@ export async function POST(request: Request) {
       );
     }
 
-    const { title, content, imageUrl } = await request.json();
+    const { title, gameDate, homeTeam, awayTeam, pick, reasoning, imageUrl } = await request.json();
 
-    if (!title || !content) {
+    if (!title || !gameDate || !homeTeam || !awayTeam || !pick || !reasoning) {
       return NextResponse.json(
-        { error: 'Title and content are required' },
+        { error: 'All fields are required' },
         { status: 400 }
       );
     }
 
+    // Parse gameDate as a Date object
+    const parsedGameDate = new Date(gameDate);
+
     // Create the article
-    const article = await prisma.article.create({
+    const article = await prisma.sMACArticle.create({
       data: {
         title,
-        content,
+        gameDate: parsedGameDate,
+        homeTeam,
+        awayTeam,
+        pick,
+        reasoning,
         imageUrl: imageUrl || null,
         authorId: session.user.id,
         published: false, // Set to false by default
+        publishRequest: true, // Request publication
       },
     });
 
