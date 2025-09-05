@@ -8,11 +8,20 @@ interface Comment {
   id: string;
   content: string;
   createdAt: string;
+  parentId?: string | null;
   user: {
     id: string;
     name: string;
     email: string;
   };
+  parent?: {
+    id: string;
+    user: {
+      id: string;
+      name: string;
+    };
+  };
+  replies?: Comment[];
 }
 
 interface ArticleDetailProps {
@@ -40,6 +49,8 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState<{ [key: string]: string }>({});
 
   // Fetch votes and comments on component mount
   useEffect(() => {
@@ -106,7 +117,7 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
     }
   };
 
-  const handleSubmitComment = async (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent, parentId?: string) => {
     e.preventDefault();
     
     if (!session?.user) {
@@ -114,7 +125,8 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
       return;
     }
 
-    if (!newComment.trim() || isSubmittingComment) return;
+    const content = parentId ? replyContent[parentId] : newComment;
+    if (!content?.trim() || isSubmittingComment) return;
 
     setIsSubmittingComment(true);
     try {
@@ -123,13 +135,31 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: newComment }),
+        body: JSON.stringify({ 
+          content: content.trim(),
+          parentId: parentId || null,
+        }),
       });
 
       if (response.ok) {
         const newCommentData = await response.json();
-        setComments([newCommentData, ...comments]);
-        setNewComment('');
+        
+        if (parentId) {
+          // Update the parent comment with the new reply
+          setComments(prevComments => 
+            prevComments.map(comment => 
+              comment.id === parentId 
+                ? { ...comment, replies: [...(comment.replies || []), newCommentData] }
+                : comment
+            )
+          );
+          setReplyContent(prev => ({ ...prev, [parentId]: '' }));
+          setReplyingTo(null);
+        } else {
+          // Add new top-level comment
+          setComments([newCommentData, ...comments]);
+          setNewComment('');
+        }
       } else {
         const error = await response.json();
         alert(error.error || 'Failed to post comment');
@@ -140,6 +170,23 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
     } finally {
       setIsSubmittingComment(false);
     }
+  };
+
+  const handleReplyClick = (commentId: string) => {
+    setReplyingTo(replyingTo === commentId ? null : commentId);
+    if (replyingTo !== commentId) {
+      setReplyContent(prev => ({ ...prev, [commentId]: '' }));
+    }
+  };
+
+  const handleReplyContentChange = (commentId: string, content: string) => {
+    setReplyContent(prev => ({ ...prev, [commentId]: content }));
+  };
+
+  const getTotalCommentCount = () => {
+    return comments.reduce((total, comment) => {
+      return total + 1 + (comment.replies?.length || 0);
+    }, 0);
   };
 
   return (
@@ -214,11 +261,11 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
 
           {/* Comments Section */}
           <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-semibold mb-4 text-black">Comments ({comments.length})</h3>
+            <h3 className="text-lg font-semibold mb-4 text-black">Comments ({getTotalCommentCount()})</h3>
             
             {/* Comment Form */}
             {session?.user && (
-              <form onSubmit={handleSubmitComment} className="mb-6">
+              <form onSubmit={(e) => handleSubmitComment(e)} className="mb-6">
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
@@ -247,7 +294,64 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
                       {new Date(comment.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-black">{comment.content}</p>
+                  <p className="text-black mb-3">{comment.content}</p>
+                  
+                  {/* Reply Button */}
+                  {session?.user && (
+                    <button
+                      onClick={() => handleReplyClick(comment.id)}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium mb-3"
+                    >
+                      {replyingTo === comment.id ? 'Cancel' : 'Reply'}
+                    </button>
+                  )}
+
+                  {/* Reply Form */}
+                  {replyingTo === comment.id && session?.user && (
+                    <form onSubmit={(e) => handleSubmitComment(e, comment.id)} className="mb-4">
+                      <textarea
+                        value={replyContent[comment.id] || ''}
+                        onChange={(e) => handleReplyContentChange(comment.id, e.target.value)}
+                        placeholder={`Reply to ${comment.user.name}...`}
+                        className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        rows={2}
+                        required
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          type="submit"
+                          disabled={isSubmittingComment || !replyContent[comment.id]?.trim()}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          {isSubmittingComment ? 'Posting...' : 'Post Reply'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReplyingTo(null)}
+                          className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Replies */}
+                  {comment.replies && comment.replies.length > 0 && (
+                    <div className="ml-6 mt-4 space-y-3 border-l-2 border-gray-200 pl-4">
+                      {comment.replies.map((reply) => (
+                        <div key={reply.id} className="bg-white p-3 rounded-lg border border-gray-200">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="font-semibold text-black text-sm">{reply.user.name}</span>
+                            <span className="text-xs text-gray-600">
+                              {new Date(reply.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-black text-sm">{reply.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               

@@ -146,15 +146,19 @@ model ArticleVote {
 }
 
 model ArticleComment {
-  id        String      @id @default(cuid())
+  id        String           @id @default(cuid())
   content   String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
   userId    String
   articleId String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  article   SMACArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  parentId  String? // For threaded comments - null for top-level comments
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   SMACArticle      @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  parent    ArticleComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   ArticleComment[] @relation("CommentReplies")
 
   @@index([articleId])
   @@index([userId])
+  @@index([parentId])
 }

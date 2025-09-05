@@ -14,7 +14,7 @@ export async function POST(
     }
 
     const { id } = await params;
-    const { content } = await request.json();
+    const { content, parentId } = await request.json();
 
     if (!content || content.trim().length === 0) {
       return NextResponse.json({ error: 'Comment content is required' }, { status: 400 });
@@ -29,12 +29,27 @@ export async function POST(
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
 
+    // If parentId is provided, validate that the parent comment exists and belongs to the same article
+    if (parentId) {
+      const parentComment = await prisma.articleComment.findFirst({
+        where: {
+          id: parentId,
+          articleId: id,
+        },
+      });
+
+      if (!parentComment) {
+        return NextResponse.json({ error: 'Parent comment not found' }, { status: 404 });
+      }
+    }
+
     // Create comment
     const comment = await prisma.articleComment.create({
       data: {
         content: content.trim(),
         userId: session.user.id,
         articleId: id,
+        parentId: parentId || null,
       },
       include: {
         user: {
@@ -43,6 +58,28 @@ export async function POST(
             name: true,
             email: true,
           },
+        },
+        parent: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        replies: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
         },
       },
     });
@@ -82,9 +119,12 @@ export async function GET(
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
 
-    // Get comments
+    // Get top-level comments (no parent) with their replies
     const comments = await prisma.articleComment.findMany({
-      where: { articleId: id },
+      where: { 
+        articleId: id,
+        parentId: null, // Only get top-level comments
+      },
       include: {
         user: {
           select: {
@@ -92,6 +132,18 @@ export async function GET(
             name: true,
             email: true,
           },
+        },
+        replies: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
         },
       },
       orderBy: { createdAt: 'desc' },
