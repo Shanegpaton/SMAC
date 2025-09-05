@@ -2,17 +2,20 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import bcrypt from 'bcryptjs';
 
 export default function Register() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
@@ -40,7 +43,37 @@ export default function Register() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      router.push('/auth/signin');
+      // Show success message
+      setSuccess('Account created successfully! Signing you in...');
+
+      // Automatically sign in the user after successful registration
+      try {
+        const signInResult = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+          callbackUrl: '/',
+        });
+
+        if (signInResult?.error) {
+          // If auto sign-in fails, redirect to sign-in page
+          console.error('Auto sign-in failed:', signInResult.error);
+          setError('Account created but auto sign-in failed. Please sign in manually.');
+          setTimeout(() => router.push('/auth/signin'), 2000);
+        } else if (signInResult?.url) {
+          // Successful auto sign-in, redirect to home page
+          setSuccess('Account created and signed in successfully! Redirecting...');
+          setTimeout(() => {
+            router.push(signInResult.url);
+            router.refresh();
+          }, 1000);
+        }
+      } catch (signInError) {
+        // If auto sign-in fails, redirect to sign-in page
+        console.error('Auto sign-in error:', signInError);
+        setError('Account created but auto sign-in failed. Please sign in manually.');
+        setTimeout(() => router.push('/auth/signin'), 2000);
+      }
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -107,13 +140,17 @@ export default function Register() {
             <div className="text-red-500 text-sm text-center">{error}</div>
           )}
 
+          {success && (
+            <div className="text-green-600 text-sm text-center">{success}</div>
+          )}
+
           <div>
             <button
               type="submit"
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? 'Creating account & signing in...' : 'Create account & Sign in'}
             </button>
           </div>
         </form>
