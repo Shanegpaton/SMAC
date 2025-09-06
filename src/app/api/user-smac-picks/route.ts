@@ -14,21 +14,26 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user) {
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const week = searchParams.get('week');
+    const year = searchParams.get('year');
+    const userId = searchParams.get('userId');
+
+    // If userId is provided, allow viewing other users' picks (for trader profiles)
+    // Otherwise, require authentication for own picks
+    if (!userId && !session?.user) {
       return NextResponse.json(
         { error: 'You must be logged in to view your picks' },
         { status: 401 }
       );
     }
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const week = searchParams.get('week');
-    const year = searchParams.get('year');
+    const targetUserId = userId || session?.user?.id;
 
     // Build where clause
     const where: any = {
-      userId: session.user.id
+      userId: targetUserId
     };
     if (week && year) {
       where.weekNumber = parseInt(week);

@@ -3,17 +3,29 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     console.log('Picks API: Starting request');
+    
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
     
     // Add a small delay to prevent overwhelming the database
     await new Promise(resolve => setTimeout(resolve, 100));
     
+    // Build where clause
+    const where: any = {
+      published: true,
+    };
+    
+    // If userId is provided, filter by that user
+    if (userId) {
+      where.authorId = userId;
+    }
+    
     const picks = await prisma.sMACArticle.findMany({
-      where: {
-        published: true,
-      },
+      where,
       orderBy: {
         createdAt: 'desc',
       },

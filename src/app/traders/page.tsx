@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Trader {
   id: string;
@@ -19,6 +20,7 @@ export default function Traders() {
   const [traders, setTraders] = useState<Trader[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchTraders = async (retryCount = 0) => {
@@ -99,7 +101,11 @@ export default function Traders() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {traders.map((trader) => (
-            <div key={trader.id} className="bg-white rounded-lg shadow-md p-6">
+            <div 
+              key={trader.id} 
+              className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => router.push(`/traders/${trader.id}`)}
+            >
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-2xl font-semibold text-black">{trader.name}</h2>
                 <div className="text-right">
