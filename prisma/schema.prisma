@@ -67,7 +67,7 @@ model SMACArticle {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   authorId       String
-  author         User             @relation(fields: [authorId], references: [id])
+  author         User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
   votes          ArticleVote[]
   comments       ArticleComment[]
 }
@@ -84,7 +84,7 @@ model SMACPick {
   yield      Float?
   weekNumber Int
   year       Int
-  author     User     @relation(fields: [authorId], references: [id])
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId   String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -107,7 +107,7 @@ model UserSMACPick {
   year       Int
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
 
   @@index([userId])

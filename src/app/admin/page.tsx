@@ -267,6 +267,30 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone and will delete all their data including picks, articles, and comments.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
+
+      // Remove user from local state
+      setUsers(users.filter(user => user.id !== userId));
+      alert('User deleted successfully');
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete user');
+    }
+  };
+
   const handleCreateSMACPick = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -1069,15 +1093,25 @@ export default function AdminPage() {
                           </span>
                         </td>
                         <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleAdminToggle(user.id, user.isAdmin)}
-                          className={user.isAdmin 
-                            ? 'text-red-600 hover:text-red-900'
-                            : 'text-blue-600 hover:text-blue-900'
-                          }
-                        >
-                          {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
-                        </button>
+                          <div className="flex space-x-4">
+                            <button
+                              onClick={() => handleAdminToggle(user.id, user.isAdmin)}
+                              className={user.isAdmin 
+                                ? 'text-red-600 hover:text-red-900'
+                                : 'text-blue-600 hover:text-blue-900'
+                              }
+                            >
+                              {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
+                            </button>
+                            {!user.isAdmin && (
+                              <button
+                                onClick={() => handleDeleteUser(user.id, user.name || user.email || 'Unknown User')}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
