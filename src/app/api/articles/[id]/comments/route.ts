@@ -164,3 +164,66 @@ export async function GET(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const { commentId } = await request.json();
+
+    if (!commentId) {
+      return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
+    }
+
+    // Check if comment exists and belongs to the user or user is admin
+    const comment = await prisma.articleComment.findUnique({
+      where: { id: commentId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!comment) {
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+    }
+
+    // Check if user owns the comment or is admin
+    if (comment.userId !== session.user.id && !session.user.isAdmin) {
+      return NextResponse.json({ error: 'You can only delete your own comments' }, { status: 403 });
+    }
+
+    // Delete the comment (this will also delete replies due to cascade)
+    await prisma.articleComment.delete({
+      where: { id: commentId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    
+    // Check if it's a table doesn't exist error
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      return NextResponse.json(
+        { error: 'Database tables not created yet. Please run the SQL migration in Supabase.' },
+        { status: 503 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}

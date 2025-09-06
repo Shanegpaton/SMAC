@@ -620,19 +620,20 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="w-full max-w-7xl mx-auto p-3 md:p-6">
       <h1 className="text-3xl font-bold mb-8 text-black">Admin Dashboard</h1>
       
       <div className="mb-8">
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+          <nav className="-mb-px flex flex-wrap space-x-2 md:space-x-8">
             <button
               onClick={() => setActiveTab('articles')}
               className={`${
                 activeTab === 'articles'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-black hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-2 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm`}
+              style={{ color: activeTab === 'articles' ? '#2563eb' : '#000000' }}
             >
               SMAC Articles
             </button>
@@ -642,7 +643,8 @@ export default function AdminPage() {
                 activeTab === 'smac-picks'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-black hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-2 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm`}
+              style={{ color: activeTab === 'smac-picks' ? '#2563eb' : '#000000' }}
             >
               SMAC Picks
             </button>
@@ -652,7 +654,8 @@ export default function AdminPage() {
                 activeTab === 'users'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-black hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-2 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm`}
+              style={{ color: activeTab === 'users' ? '#2563eb' : '#000000' }}
             >
               Manage Users
             </button>
@@ -662,7 +665,8 @@ export default function AdminPage() {
                 activeTab === 'smac-coins'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-black hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-2 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm`}
+              style={{ color: activeTab === 'smac-coins' ? '#2563eb' : '#000000' }}
             >
               SMAC Coins
             </button>
@@ -674,7 +678,9 @@ export default function AdminPage() {
         {activeTab === 'articles' && (
           <section>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">SMAC Articles</h2>
+              <div>
+                <h2 className="text-2xl font-semibold">SMAC Articles</h2>
+              </div>
               <button
                 onClick={() => router.push('/admin/picks/new')}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -684,61 +690,63 @@ export default function AdminPage() {
             </div>
             
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Title
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Game Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Teams
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Pick
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {articles.map((article) => (
-                    <tr key={article.id} className={!article.published ? 'bg-yellow-50' : ''}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{article.title}</div>
-                        <div className="text-xs text-gray-500">{article.author?.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {new Date(article.gameDate).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {article.homeTeam} vs {article.awayTeam}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{article.pick}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          article.published 
-                            ? 'bg-green-100 text-green-800' 
-                            : article.publishRequest 
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {article.published ? 'Published' : article.publishRequest ? 'Pending' : 'Draft'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div className="relative">
+                <div className="overflow-x-auto border border-gray-200 rounded-lg" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <table className="min-w-[900px] divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
+                        Title
+                      </th>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                        Game Date
+                      </th>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+                        Teams
+                      </th>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                        Pick
+                      </th>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                        Status
+                      </th>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {articles.map((article) => (
+                      <tr key={article.id} className={!article.published ? 'bg-yellow-50' : ''}>
+                        <td className="px-3 md:px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">{article.title}</div>
+                          <div className="text-xs text-gray-500">{article.author?.name}</div>
+                        </td>
+                        <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">
+                            {new Date(article.gameDate).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="px-3 md:px-6 py-4">
+                          <div className="text-sm text-gray-900 max-w-xs truncate">
+                            {article.homeTeam} vs {article.awayTeam}
+                          </div>
+                        </td>
+                        <td className="px-3 md:px-6 py-4">
+                          <div className="text-sm text-gray-900 max-w-xs truncate">{article.pick}</div>
+                        </td>
+                        <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            article.published 
+                              ? 'bg-green-100 text-green-800' 
+                              : article.publishRequest 
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {article.published ? 'Published' : article.publishRequest ? 'Pending' : 'Draft'}
+                          </span>
+                        </td>
+                        <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handlePublishToggle(article.id, article.published)}
                           className={`mr-4 ${
@@ -776,11 +784,13 @@ export default function AdminPage() {
                         >
                           Delete
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                      </tr>
+                    ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </section>
         )}
@@ -788,7 +798,9 @@ export default function AdminPage() {
         {activeTab === 'smac-picks' && (
           <section>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">SMAC Picks</h2>
+              <div>
+                <h2 className="text-2xl font-semibold">SMAC Picks</h2>
+              </div>
               <button
                 onClick={() => setIsCreatingPick(!isCreatingPick)}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -898,70 +910,72 @@ export default function AdminPage() {
                   <p>Click "Create SMAC Pick" to add your first pick.</p>
                 </div>
               ) : (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Sport
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Game
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Bet
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Odds
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        SMAC Coins
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Result
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Yield
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {smacPicks.map((pick) => (
-                      <tr key={pick.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {new Date(pick.date).toLocaleString()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{pick.sport}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{pick.game}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{pick.bet}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{pick.odds}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{pick.smacCoins}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{pick.result || '-'}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {pick.yield ? `${pick.yield}%` : '-'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <div className="relative">
+                  <div className="overflow-x-auto border border-gray-200 rounded-lg" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <table className="min-w-[1000px] divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[140px]">
+                          Date
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+                          Sport
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+                          Game
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                          Bet
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+                          Odds
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                          SMAC Coins
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+                          Result
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+                          Yield
+                        </th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {smacPicks.map((pick) => (
+                        <tr key={pick.id}>
+                          <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {new Date(pick.date).toLocaleString()}
+                            </div>
+                          </td>
+                          <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{pick.sport}</div>
+                          </td>
+                          <td className="px-3 md:px-6 py-4">
+                            <div className="text-sm text-gray-900 max-w-xs truncate">{pick.game}</div>
+                          </td>
+                          <td className="px-3 md:px-6 py-4">
+                            <div className="text-sm text-gray-900 max-w-xs truncate">{pick.bet}</div>
+                          </td>
+                          <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{pick.odds}</div>
+                          </td>
+                          <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{pick.smacCoins}</div>
+                          </td>
+                          <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{pick.result || '-'}</div>
+                          </td>
+                          <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {pick.yield ? `${pick.yield}%` : '-'}
+                            </div>
+                          </td>
+                          <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
                           {!pick.result && (
                             <div className="space-x-2">
                               <button
@@ -986,9 +1000,34 @@ export default function AdminPage() {
                           )}
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                      ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Scroll indicators */}
+                  <button 
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 rounded-full p-2 shadow-md hover:bg-gray-50 z-10"
+                    onClick={() => {
+                      const container = document.querySelector('.overflow-x-auto');
+                      if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                    }}
+                  >
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 rounded-full p-2 shadow-md hover:bg-gray-50 z-10"
+                    onClick={() => {
+                      const container = document.querySelector('.overflow-x-auto');
+                      if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                    }}
+                  >
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
               )}
             </div>
           </section>
@@ -996,44 +1035,48 @@ export default function AdminPage() {
 
         {activeTab === 'users' && (
           <section>
-            <h2 className="text-2xl font-semibold mb-6">Manage Users</h2>
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold">Manage Users</h2>
+            </div>
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user) => (
-                    <tr key={user.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.isAdmin 
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {user.isAdmin ? 'Admin' : 'User'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div className="relative">
+                <div className="overflow-x-auto border border-gray-200 rounded-lg" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <table className="min-w-[600px] divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+                        Name
+                      </th>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
+                        Email
+                      </th>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                        Status
+                      </th>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {users.map((user) => (
+                      <tr key={user.id}>
+                        <td className="px-3 md:px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">{user.name}</div>
+                        </td>
+                        <td className="px-3 md:px-6 py-4">
+                          <div className="text-sm text-gray-500 max-w-xs truncate">{user.email}</div>
+                        </td>
+                        <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.isAdmin 
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {user.isAdmin ? 'Admin' : 'User'}
+                          </span>
+                        </td>
+                        <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleAdminToggle(user.id, user.isAdmin)}
                           className={user.isAdmin 
@@ -1043,11 +1086,13 @@ export default function AdminPage() {
                         >
                           {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                      </tr>
+                    ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </section>
         )}

@@ -189,6 +189,52 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
     }, 0);
   };
 
+  const handleDeleteComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
+    if (!session?.user) {
+      alert('Please sign in to delete comments');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/articles/${article.id}/comments`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ commentId }),
+      });
+
+      if (response.ok) {
+        if (isReply && parentId) {
+          // Remove reply from parent comment
+          setComments(prevComments => 
+            prevComments.map(comment => 
+              comment.id === parentId 
+                ? { 
+                    ...comment, 
+                    replies: comment.replies?.filter(reply => reply.id !== commentId) || []
+                  }
+                : comment
+            )
+          );
+        } else {
+          // Remove top-level comment
+          setComments(prevComments => prevComments.filter(comment => comment.id !== commentId));
+        }
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to delete comment');
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      alert('Failed to delete comment');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6">
       <article className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -290,9 +336,20 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
                 <div key={comment.id} className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-semibold text-black">{comment.user.name}</span>
-                    <span className="text-sm text-black">
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-black">
+                        {new Date(comment.createdAt).toLocaleDateString()}
+                      </span>
+                      {(session?.user?.id === comment.user.id || session?.user?.isAdmin) && (
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          title="Delete comment"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-black mb-3">{comment.content}</p>
                   
@@ -343,9 +400,20 @@ export default function ArticleDetail({ article }: ArticleDetailProps) {
                         <div key={reply.id} className="bg-white p-3 rounded-lg border border-gray-200">
                           <div className="flex justify-between items-start mb-2">
                             <span className="font-semibold text-black text-sm">{reply.user.name}</span>
-                            <span className="text-xs text-gray-600">
-                              {new Date(reply.createdAt).toLocaleDateString()}
-                            </span>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs text-gray-600">
+                                {new Date(reply.createdAt).toLocaleDateString()}
+                              </span>
+                              {(session?.user?.id === reply.user.id || session?.user?.isAdmin) && (
+                                <button
+                                  onClick={() => handleDeleteComment(reply.id, true, comment.id)}
+                                  className="text-red-600 hover:text-red-800 text-xs font-medium"
+                                  title="Delete reply"
+                                >
+                                  Delete
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <p className="text-black text-sm">{reply.content}</p>
                         </div>

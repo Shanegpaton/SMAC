@@ -46,14 +46,59 @@ body {
   color: inherit;
 }
 
-/* Ensure navbar text is white - override global black rule */
-nav,
-nav *,
-nav .text-white,
-nav a,
-nav span,
-nav button,
-nav div,
-nav p {
+/* Ensure main navbar text is white - override global black rule */
+.bg-gray-800,
+.bg-gray-800 *,
+.bg-gray-800 .text-white,
+.bg-gray-800 a,
+.bg-gray-800 span,
+.bg-gray-800 button,
+.bg-gray-800 div,
+.bg-gray-800 p {
   color: white !important;
+}
+
+/* Custom scrollbar styles for desktop */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 12px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #64748b;
+  border-radius: 6px;
+  border: 1px solid #475569;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Firefox scrollbar */
+.overflow-x-auto {
+  scrollbar-width: auto;
+  scrollbar-color: #64748b #e2e8f0;
+}
+
+/* Add subtle shadow to indicate scrollable content */
+.overflow-x-auto::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(to left, rgba(255, 255, 255, 0.8), transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.overflow-x-auto:hover::after {
+  opacity: 1;
 }
