@@ -677,16 +677,8 @@ export default function AdminPage() {
       <div className="space-y-8">
         {activeTab === 'articles' && (
           <section>
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-semibold">SMAC Articles</h2>
-              </div>
-              <button
-                onClick={() => router.push('/admin/picks/new')}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Create New Article
-              </button>
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold">SMAC Articles</h2>
             </div>
             
             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -758,7 +750,7 @@ export default function AdminPage() {
                           {article.published ? 'Unpublish' : 'Publish'}
                         </button>
                         <button
-                          onClick={() => router.push(`/admin/picks/${article.id}/edit`)}
+                          onClick={() => router.push(`/admin/edit-article/${article.id}`)}
                           className="text-blue-600 hover:text-blue-900 mr-4"
                         >
                           Edit

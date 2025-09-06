@@ -65,38 +65,56 @@ export async function PATCH(
       currentUserEmail: session.user.email
     });
 
-    // Calculate winnings and yield
-    let winnings = 0;
+    // Calculate winnings and yield for the new result
+    let newWinnings = 0;
     let yieldAmount = 0;
 
     if (result === 'win') {
       if (pick.odds > 0) {
         // For positive odds: (odds/100 * stake) + stake
-        winnings = Math.floor((pick.odds * pick.smacCoins) / 100) + pick.smacCoins;
+        newWinnings = Math.floor((pick.odds * pick.smacCoins) / 100) + pick.smacCoins;
         yieldAmount = pick.odds;
       } else {
         // For negative odds: (100/|odds| * stake) + stake
-        winnings = Math.floor((100 * pick.smacCoins) / Math.abs(pick.odds)) + pick.smacCoins;
+        newWinnings = Math.floor((100 * pick.smacCoins) / Math.abs(pick.odds)) + pick.smacCoins;
         yieldAmount = (100 * 100) / Math.abs(pick.odds);
       }
     } else if (result === 'push') {
       // For a push, return the original stake
-      winnings = pick.smacCoins;
+      newWinnings = pick.smacCoins;
       yieldAmount = 0;
     } else {
-      winnings = 0;
+      newWinnings = 0;
       yieldAmount = -100;
     }
 
+    // Calculate what the user previously received (if any)
+    let previousWinnings = 0;
+    if (pick.result === 'win') {
+      if (pick.odds > 0) {
+        previousWinnings = Math.floor((pick.odds * pick.smacCoins) / 100) + pick.smacCoins;
+      } else {
+        previousWinnings = Math.floor((100 * pick.smacCoins) / Math.abs(pick.odds)) + pick.smacCoins;
+      }
+    } else if (pick.result === 'push') {
+      previousWinnings = pick.smacCoins;
+    }
+
+    // Calculate the difference in winnings
+    const winningsDifference = newWinnings - previousWinnings;
+
     console.log('Calculated values:', {
       result,
+      previousResult: pick.result,
       odds: pick.odds,
       stake: pick.smacCoins,
-      winnings,
+      previousWinnings,
+      newWinnings,
+      winningsDifference,
       yieldAmount
     });
 
-    // First get the current user to verify their SMAC coins
+    // Get the current user
     const currentUser = await prisma.user.findUnique({
       where: { email: session.user.email }
     });
@@ -105,10 +123,26 @@ export async function PATCH(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    console.log('Current user before update:', {
-      id: currentUser.id,
-      email: currentUser.email,
-      smacCoins: currentUser.smacCoins
+    // Check if user is admin or if they own this pick
+    const isAdmin = currentUser.isAdmin;
+    const isOwner = pick.userId === currentUser.id;
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json(
+        { error: 'You can only update your own picks' },
+        { status: 403 }
+      );
+    }
+
+    // Use the pick owner's user for SMAC coins updates
+    const targetUser = pick.user;
+
+    console.log('Target user before update:', {
+      id: targetUser.id,
+      email: targetUser.email,
+      smacCoins: targetUser.smacCoins,
+      isAdmin,
+      isOwner
     });
 
     // Update the pick and user's SMAC coins in a transaction
@@ -122,26 +156,28 @@ export async function PATCH(
         },
       });
 
-      // Update user's SMAC coins for win or push
-      if (result === 'win' || result === 'push') {
+      // Update user's SMAC coins based on the difference
+      if (winningsDifference !== 0) {
         const updatedUser = await tx.user.update({
-          where: { id: currentUser.id },
+          where: { id: targetUser.id },
           data: {
             smacCoins: {
-              increment: winnings,
+              increment: winningsDifference,
             },
           },
         });
 
         console.log('Updated user SMAC coins:', {
-          userId: currentUser.id,
-          oldBalance: currentUser.smacCoins,
-          winnings,
+          userId: targetUser.id,
+          oldBalance: targetUser.smacCoins,
+          winningsDifference,
           newBalance: updatedUser.smacCoins
         });
 
-        if (updatedUser.smacCoins <= currentUser.smacCoins) {
-          throw new Error('SMAC coins balance did not increase');
+        // Validate the balance change
+        const expectedBalance = targetUser.smacCoins + winningsDifference;
+        if (updatedUser.smacCoins !== expectedBalance) {
+          throw new Error(`SMAC coins balance mismatch. Expected: ${expectedBalance}, Got: ${updatedUser.smacCoins}`);
         }
       }
 

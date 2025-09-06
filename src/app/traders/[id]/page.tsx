@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 interface Trader {
@@ -47,6 +48,7 @@ interface GamePick {
 export default function TraderProfile() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const traderId = params.id as string;
   
   const [trader, setTrader] = useState<Trader | null>(null);
@@ -55,6 +57,8 @@ export default function TraderProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'picks' | 'articles'>('picks');
+  const [updatingPick, setUpdatingPick] = useState<string | null>(null);
+  const [deletingPick, setDeletingPick] = useState<string | null>(null);
 
   useEffect(() => {
     if (traderId) {
@@ -99,6 +103,66 @@ export default function TraderProfile() {
       setLoading(false);
     }
   };
+
+  const handleResultUpdate = async (pickId: string, result: string) => {
+    try {
+      setUpdatingPick(pickId);
+      const response = await fetch(`/api/user-smac-picks/${pickId}/result`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ result }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update pick result');
+      }
+
+      // Update the picks list
+      setPicks(picks.map(pick => 
+        pick.id === pickId ? { ...pick, result } : pick
+      ));
+
+      // Refresh trader data to update stats
+      fetchTraderData();
+    } catch (error) {
+      console.error('Error updating pick result:', error);
+      setError('Failed to update pick result');
+    } finally {
+      setUpdatingPick(null);
+    }
+  };
+
+  const handleDeletePick = async (pickId: string) => {
+    if (!confirm('Are you sure you want to delete this pick? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setDeletingPick(pickId);
+      const response = await fetch(`/api/user-smac-picks/${pickId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete pick');
+      }
+
+      // Remove the pick from the list
+      setPicks(picks.filter(pick => pick.id !== pickId));
+
+      // Refresh trader data to update stats
+      fetchTraderData();
+    } catch (error) {
+      console.error('Error deleting pick:', error);
+      setError('Failed to delete pick');
+    } finally {
+      setDeletingPick(null);
+    }
+  };
+
+  const isAdmin = session?.user?.isAdmin;
 
   if (loading) {
     return <div className="text-center py-8">Loading...</div>;
@@ -247,6 +311,11 @@ export default function TraderProfile() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                           Yield
                         </th>
+                        {isAdmin && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                            Actions
+                          </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -280,6 +349,54 @@ export default function TraderProfile() {
                               {pick.result === 'push' ? 'Push' : pick.yield ? `${pick.yield}%` : '-'}
                             </div>
                           </td>
+                          {isAdmin && (
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex flex-col space-y-1">
+                                <div className="flex space-x-1">
+                                  <button
+                                    onClick={() => handleResultUpdate(pick.id, 'win')}
+                                    disabled={updatingPick === pick.id}
+                                    className={`text-xs px-2 py-1 border rounded hover:bg-green-50 disabled:opacity-50 ${
+                                      pick.result === 'win' 
+                                        ? 'bg-green-100 text-green-800 border-green-600' 
+                                        : 'text-green-600 hover:text-green-900 border-green-600'
+                                    }`}
+                                  >
+                                    {updatingPick === pick.id ? '...' : 'Win'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleResultUpdate(pick.id, 'push')}
+                                    disabled={updatingPick === pick.id}
+                                    className={`text-xs px-2 py-1 border rounded hover:bg-blue-50 disabled:opacity-50 ${
+                                      pick.result === 'push' 
+                                        ? 'bg-blue-100 text-blue-800 border-blue-600' 
+                                        : 'text-blue-600 hover:text-blue-900 border-blue-600'
+                                    }`}
+                                  >
+                                    {updatingPick === pick.id ? '...' : 'Push'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleResultUpdate(pick.id, 'loss')}
+                                    disabled={updatingPick === pick.id}
+                                    className={`text-xs px-2 py-1 border rounded hover:bg-red-50 disabled:opacity-50 ${
+                                      pick.result === 'loss' 
+                                        ? 'bg-red-100 text-red-800 border-red-600' 
+                                        : 'text-red-600 hover:text-red-900 border-red-600'
+                                    }`}
+                                  >
+                                    {updatingPick === pick.id ? '...' : 'Loss'}
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => handleDeletePick(pick.id)}
+                                  disabled={deletingPick === pick.id}
+                                  className="text-red-600 hover:text-red-900 text-xs px-2 py-1 border border-red-600 rounded hover:bg-red-50 disabled:opacity-50"
+                                >
+                                  {deletingPick === pick.id ? 'Deleting...' : 'Delete'}
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
