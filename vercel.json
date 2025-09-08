@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/check-distribution",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
+
