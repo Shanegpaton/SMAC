@@ -86,15 +86,6 @@ export async function DELETE(
         where: { userId: userId }
       });
       
-      // Delete user's sessions
-      await tx.session.deleteMany({
-        where: { userId: userId }
-      });
-      
-      // Delete user's accounts
-      await tx.account.deleteMany({
-        where: { userId: userId }
-      });
       
       // Finally, delete the user
       await tx.user.delete({
