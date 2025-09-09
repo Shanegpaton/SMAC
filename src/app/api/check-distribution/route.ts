@@ -51,4 +51,3 @@ export async function GET() {
 
 // Vercel Cron issues GET requests by default; keep GET handler.
 // You can also manually hit this route in the browser to verify JSON output.
-
