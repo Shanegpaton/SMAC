@@ -1020,29 +1020,6 @@ export default function AdminPage() {
                       </tbody>
                     </table>
                   </div>
-                  {/* Scroll indicators */}
-                  <button 
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 rounded-full p-2 shadow-md hover:bg-gray-50 z-10"
-                    onClick={() => {
-                      const container = document.querySelector('.overflow-x-auto');
-                      if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
-                    }}
-                  >
-                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <button 
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 rounded-full p-2 shadow-md hover:bg-gray-50 z-10"
-                    onClick={() => {
-                      const container = document.querySelector('.overflow-x-auto');
-                      if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
-                    }}
-                  >
-                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
                 </div>
               )}
             </div>
