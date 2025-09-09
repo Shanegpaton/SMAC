@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
-    console.log('Picks API: Starting request');
+    console.log('Picks API: Starting request - force redeploy');
     
     // Get query parameters
     const { searchParams } = new URL(request.url);
