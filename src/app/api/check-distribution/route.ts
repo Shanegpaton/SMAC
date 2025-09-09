@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const baseUrl = process.env.SUPABASE_FUNCTIONS_URL;
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const cronKey = process.env.CRON_SECRET_KEY;
 
-    if (!baseUrl || !serviceKey) {
+    if (!supabaseUrl || !serviceKey) {
       return NextResponse.json(
-        { error: 'Missing env: SUPABASE_FUNCTIONS_URL or SUPABASE_SERVICE_ROLE_KEY' },
+        { error: 'Missing env: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' },
         { status: 500 }
       );
     }
@@ -20,7 +20,7 @@ export async function GET() {
       );
     }
 
-    const url = `${baseUrl.replace(/\/$/, '')}/distribute-coins`;
+    const url = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/distribute-coins`;
     console.log('Calling Supabase function:', url);
     
     const res = await fetch(url, {
