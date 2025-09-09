@@ -16,7 +16,7 @@ NEXTAUTH_URL=http://localhost:3000
 SUPABASE_URL=your_supabase_project_url_here
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 SUPABASE_FUNCTIONS_URL=your_supabase_functions_url_here
-CRON_SECRET_KEY=sf0tefa2CtvO78C3qF/A5be9lhwyHzYuKBeIV/VdqqM=
+CRON_SECRET_KEY=your_cron_secret_key_here
 
 # Environment
 NODE_ENV=development
