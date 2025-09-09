@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/check-distribution",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }
