@@ -4,6 +4,7 @@ export async function GET() {
   try {
     const baseUrl = process.env.SUPABASE_FUNCTIONS_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const cronKey = process.env.CRON_SECRET_KEY;
 
     if (!baseUrl || !serviceKey) {
       return NextResponse.json(
@@ -12,15 +13,28 @@ export async function GET() {
       );
     }
 
-    const url = `${baseUrl.replace(/\/$/, '')}/distribute-coins/check-run`;
+    if (!cronKey) {
+      return NextResponse.json(
+        { error: 'Missing env: CRON_SECRET_KEY' },
+        { status: 500 }
+      );
+    }
+
+    const url = `${baseUrl.replace(/\/$/, '')}/distribute-coins`;
+    console.log('Calling Supabase function:', url);
+    
     const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${serviceKey}`,
+        'x-api-key': serviceKey,
+        'x-cron-key': cronKey,
       }
     });
 
+    console.log('Response status:', res.status);
     const text = await res.text();
+    console.log('Response text:', text);
     // Try to parse as JSON, fall back to raw text
     try {
       const json = JSON.parse(text);
