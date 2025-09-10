@@ -12,6 +12,14 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SMAC - Sports Picks",
   description: "Get the best sports picks and analysis",
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/smac-logo.png', type: 'image/png' }
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/smac-logo.png',
+  },
 };
 
 export default function RootLayout({

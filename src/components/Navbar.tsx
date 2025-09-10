@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -21,8 +22,14 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="text-xl font-bold text-white" onClick={closeMenu}>
-            SMAC
+          <Link href="/" className="flex items-center" onClick={closeMenu}>
+            <Image
+              src="/smac-logo.png"
+              alt="SMAC Logo"
+              width={40}
+              height={40}
+              className="h-10 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
