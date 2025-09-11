@@ -388,13 +388,21 @@ export default function TraderProfile() {
                                     {updatingPick === pick.id ? '...' : 'Loss'}
                                   </button>
                                 </div>
-                                <button
-                                  onClick={() => handleDeletePick(pick.id)}
-                                  disabled={deletingPick === pick.id}
-                                  className="text-red-600 hover:text-red-900 text-xs px-2 py-1 border border-red-600 rounded hover:bg-red-50 disabled:opacity-50"
-                                >
-                                  {deletingPick === pick.id ? 'Deleting...' : 'Delete'}
-                                </button>
+                                <div className="flex space-x-1">
+                                  <button
+                                    onClick={() => router.push(`/admin/edit-smac-pick/${pick.id}`)}
+                                    className="text-yellow-600 hover:text-yellow-900 text-xs px-2 py-1 border border-yellow-600 rounded hover:bg-yellow-50"
+                                  >
+                                    Edit Pick
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeletePick(pick.id)}
+                                    disabled={deletingPick === pick.id}
+                                    className="text-red-600 hover:text-red-900 text-xs px-2 py-1 border border-red-600 rounded hover:bg-red-50 disabled:opacity-50"
+                                  >
+                                    {deletingPick === pick.id ? 'Deleting...' : 'Delete'}
+                                  </button>
+                                </div>
                               </div>
                             </td>
                           )}
@@ -437,13 +445,21 @@ export default function TraderProfile() {
                           Status: {article.published ? 'Published' : 'Draft'}
                         </p>
                       </div>
-                      <div>
+                      <div className="flex space-x-2">
                         <Link
                           href={`/picks/${article.id}`}
                           className="text-blue-500 hover:text-blue-700"
                         >
                           View Article
                         </Link>
+                        {isAdmin && (
+                          <Link
+                            href={`/edit-pick/${article.id}`}
+                            className="text-green-500 hover:text-green-700"
+                          >
+                            Edit Article
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -3,9 +3,137 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'You must be logged in to view picks' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin
+    if (!session.user.isAdmin) {
+      return NextResponse.json(
+        { error: 'Only admins can view individual picks' },
+        { status: 403 }
+      );
+    }
+
+    const { id: pickId } = await params;
+
+    const pick = await prisma.userSMACPick.findUnique({
+      where: { id: pickId },
+      include: { user: true }
+    });
+
+    if (!pick) {
+      return NextResponse.json(
+        { error: 'Pick not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(pick);
+  } catch (error) {
+    console.error('Error fetching pick:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch pick' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'You must be logged in to update picks' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is admin
+    if (!session.user.isAdmin) {
+      return NextResponse.json(
+        { error: 'Only admins can update picks' },
+        { status: 403 }
+      );
+    }
+
+    const { id: pickId } = await params;
+    const body = await request.json();
+
+    // Check if the pick exists
+    const existingPick = await prisma.userSMACPick.findUnique({
+      where: { id: pickId },
+      include: { user: true }
+    });
+
+    if (!existingPick) {
+      return NextResponse.json(
+        { error: 'Pick not found' },
+        { status: 404 }
+      );
+    }
+
+    // Calculate yield based on result and odds
+    let calculatedYield = null;
+    if (body.result === 'win') {
+      if (body.odds > 0) {
+        calculatedYield = body.odds;
+      } else {
+        calculatedYield = Math.floor((100 * 100) / Math.abs(body.odds));
+      }
+    } else if (body.result === 'loss') {
+      calculatedYield = -100;
+    } else if (body.result === 'push') {
+      calculatedYield = 0;
+    }
+
+    // Update the pick
+    const updatedPick = await prisma.userSMACPick.update({
+      where: { id: pickId },
+      data: {
+        date: body.date,
+        sport: body.sport,
+        game: body.game,
+        bet: body.bet,
+        odds: body.odds,
+        smacCoins: body.smacCoins,
+        result: body.result || null,
+        yield: calculatedYield,
+        weekNumber: body.weekNumber,
+        year: body.year
+      },
+      include: { user: true }
+    });
+
+    console.log(`Admin ${session.user.name} updated pick ${pickId} for user ${existingPick.user.name}`);
+
+    return NextResponse.json(updatedPick);
+  } catch (error) {
+    console.error('Error updating pick:', error);
+    return NextResponse.json(
+      { error: 'Failed to update pick' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,7 +153,7 @@ export async function DELETE(
       );
     }
 
-    const pickId = params.id;
+    const { id: pickId } = await params;
 
     // Check if the pick exists
     const existingPick = await prisma.userSMACPick.findUnique({
