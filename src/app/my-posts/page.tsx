@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { formatOdds } from '@/lib/formatOdds';
 
 interface GamePick {
   id: string;
@@ -416,7 +417,7 @@ export default function MyPosts() {
                               <div className="text-sm text-gray-900">{pick.bet}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{pick.odds}</div>
+                              <div className="text-sm text-gray-900">{formatOdds(pick.odds)}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-900">{pick.smacCoins}</div>

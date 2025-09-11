@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { formatOdds } from '@/lib/formatOdds';
 import { useRouter } from 'next/navigation';
 
 interface SMACPick {
@@ -351,7 +352,7 @@ export default function AdminSMACPicks() {
                       <div className="text-sm text-gray-900">{pick.bet}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{pick.odds}</div>
+                      <div className="text-sm text-gray-900">{formatOdds(pick.odds)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{pick.smacCoins}</div>
