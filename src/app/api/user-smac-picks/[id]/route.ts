@@ -87,6 +87,37 @@ export async function PATCH(
       );
     }
 
+    // Calculate what the user previously received (if any)
+    let previousWinnings = 0;
+    if (existingPick.result === 'win') {
+      if (existingPick.odds > 0) {
+        previousWinnings = Math.floor((existingPick.odds * existingPick.smacCoins) / 100);
+      } else {
+        previousWinnings = Math.floor((100 * existingPick.smacCoins) / Math.abs(existingPick.odds));
+      }
+    } else if (existingPick.result === 'push') {
+      previousWinnings = 0; // They got their stake back, no profit
+    } else if (existingPick.result === 'loss') {
+      previousWinnings = -existingPick.smacCoins; // They lost their stake
+    }
+
+    // Calculate what they should receive with the new values
+    let newWinnings = 0;
+    if (body.result === 'win') {
+      if (body.odds > 0) {
+        newWinnings = Math.floor((body.odds * body.smacCoins) / 100);
+      } else {
+        newWinnings = Math.floor((100 * body.smacCoins) / Math.abs(body.odds));
+      }
+    } else if (body.result === 'push') {
+      newWinnings = 0; // They get their stake back, no profit
+    } else if (body.result === 'loss') {
+      newWinnings = -body.smacCoins; // They lose their stake
+    }
+
+    // Calculate the difference in winnings
+    const winningsDifference = newWinnings - previousWinnings;
+
     // Calculate yield based on result and odds
     let calculatedYield = null;
     if (body.result === 'win') {
@@ -101,25 +132,70 @@ export async function PATCH(
       calculatedYield = 0;
     }
 
-    // Update the pick
-    const updatedPick = await prisma.userSMACPick.update({
-      where: { id: pickId },
-      data: {
-        date: body.date,
-        sport: body.sport,
-        game: body.game,
-        bet: body.bet,
-        odds: body.odds,
-        smacCoins: body.smacCoins,
-        result: body.result || null,
-        yield: calculatedYield,
-        weekNumber: body.weekNumber,
-        year: body.year
-      },
-      include: { user: true }
+    console.log('Pick update calculation:', {
+      pickId,
+      userId: existingPick.userId,
+      previousResult: existingPick.result,
+      previousOdds: existingPick.odds,
+      previousStake: existingPick.smacCoins,
+      previousWinnings,
+      newResult: body.result,
+      newOdds: body.odds,
+      newStake: body.smacCoins,
+      newWinnings,
+      winningsDifference,
+      currentBalance: existingPick.user.smacCoins
     });
 
-    console.log(`Admin ${session.user.name} updated pick ${pickId} for user ${existingPick.user.name}`);
+    // Update the pick and adjust user's SMAC coins in a transaction
+    const updatedPick = await prisma.$transaction(async (tx) => {
+      // Update the pick
+      const updated = await tx.userSMACPick.update({
+        where: { id: pickId },
+        data: {
+          date: body.date,
+          sport: body.sport,
+          game: body.game,
+          bet: body.bet,
+          odds: body.odds,
+          smacCoins: body.smacCoins,
+          result: body.result || null,
+          yield: calculatedYield,
+          weekNumber: body.weekNumber,
+          year: body.year
+        },
+        include: { user: true }
+      });
+
+      // Update user's SMAC coins based on the difference
+      if (winningsDifference !== 0) {
+        const updatedUser = await tx.user.update({
+          where: { id: existingPick.userId },
+          data: {
+            smacCoins: {
+              increment: winningsDifference,
+            },
+          },
+        });
+
+        console.log('Updated user SMAC coins after pick edit:', {
+          userId: existingPick.userId,
+          oldBalance: existingPick.user.smacCoins,
+          winningsDifference,
+          newBalance: updatedUser.smacCoins
+        });
+
+        // Validate the balance change
+        const expectedBalance = existingPick.user.smacCoins + winningsDifference;
+        if (updatedUser.smacCoins !== expectedBalance) {
+          throw new Error(`SMAC coins balance mismatch. Expected: ${expectedBalance}, Got: ${updatedUser.smacCoins}`);
+        }
+      }
+
+      return updated;
+    });
+
+    console.log(`Admin ${session.user.name} updated pick ${pickId} for user ${existingPick.user.name} and adjusted SMAC coins by ${winningsDifference}`);
 
     return NextResponse.json(updatedPick);
   } catch (error) {
