@@ -69,14 +69,18 @@ export async function PATCH(
     let yieldAmount = 0;
 
     if (result === 'win') {
-      winnings = pick.odds > 0 
-        ? pick.smacCoins * (pick.odds / 100)
-        : pick.smacCoins * (100 / Math.abs(pick.odds));
-      yieldAmount = Number(((winnings / pick.smacCoins) * 100).toFixed(2));
+      // For a win, user gets profit + original stake back
+      const profit = pick.odds > 0 
+        ? Math.floor((pick.odds * pick.smacCoins) / 100)
+        : Math.floor((100 * pick.smacCoins) / Math.abs(pick.odds));
+      winnings = profit + pick.smacCoins; // Profit + original stake
+      yieldAmount = pick.odds > 0 ? pick.odds : Math.floor((100 * 100) / Math.abs(pick.odds));
     } else if (result === 'push') {
+      // For a push, user gets their original stake back
       winnings = pick.smacCoins;
       yieldAmount = 0;
     } else if (result === 'loss') {
+      // For a loss, user gets nothing back
       winnings = 0;
       yieldAmount = -100;
     }
@@ -104,22 +108,24 @@ export async function PATCH(
       });
 
       if (result === 'win') {
-        // For a win, update user's SMAC coins and global balance
+        // For a win, give user profit + original stake, and add profit to global balance
+        const profit = winnings - pick.smacCoins; // Extract just the profit portion
+        
         await tx.user.update({
           where: { id: pick.authorId },
           data: {
             smacCoins: {
-              increment: winnings
+              increment: winnings // Profit + original stake
             }
           }
         });
 
-        // Add winnings to global balance
+        // Add only the profit to global balance (not the original stake)
         await tx.globalSMACCoins.update({
           where: { id: globalSMACCoins.id },
           data: {
             balance: {
-              increment: winnings
+              increment: profit
             }
           }
         });
@@ -130,24 +136,32 @@ export async function PATCH(
           userWinnings: winnings,
           userNewBalance: pick.author.smacCoins + winnings,
           globalOldBalance: globalSMACCoins.balance,
-          globalWinnings: winnings,
-          globalNewBalance: globalSMACCoins.balance + winnings
+          globalProfit: profit,
+          globalNewBalance: globalSMACCoins.balance + profit
         });
       } else if (result === 'push') {
-        // For a push, return SMAC coins to global balance
-        await tx.globalSMACCoins.update({
-          where: { id: globalSMACCoins.id },
+        // For a push, give user their stake back, no global balance change
+        await tx.user.update({
+          where: { id: pick.authorId },
           data: {
-            balance: {
+            smacCoins: {
               increment: pick.smacCoins
             }
           }
         });
 
-        console.log('Returned SMAC coins to global balance for push:', {
-          amount: pick.smacCoins,
-          oldBalance: globalSMACCoins.balance,
-          newBalance: globalSMACCoins.balance + pick.smacCoins
+        console.log('Returned stake to user for push:', {
+          userId: pick.authorId,
+          userOldBalance: pick.author.smacCoins,
+          stakeReturned: pick.smacCoins,
+          userNewBalance: pick.author.smacCoins + pick.smacCoins
+        });
+      } else if (result === 'loss') {
+        // For a loss, user gets nothing, no global balance change
+        console.log('User lost their stake for loss:', {
+          userId: pick.authorId,
+          stakeLost: pick.smacCoins,
+          userBalance: pick.author.smacCoins
         });
       }
 
