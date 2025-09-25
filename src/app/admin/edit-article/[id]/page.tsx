@@ -4,17 +4,32 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-interface Article {
+interface SMACArticle {
   id: string;
   title: string;
-  content: string;
+  gameDate: string;
+  homeTeam: string;
+  awayTeam: string;
+  pick: string;
+  reasoning: string;
   imageUrl: string | null;
+  published: boolean;
+  publishRequest?: boolean;
+  authorId: string;
+  author?: {
+    name: string;
+    email: string;
+  };
 }
 
 export default function EditArticle({ params }: { params: Promise<{ id: string }> }) {
-  const [article, setArticle] = useState<Article | null>(null);
+  const [article, setArticle] = useState<SMACArticle | null>(null);
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [gameDate, setGameDate] = useState('');
+  const [homeTeam, setHomeTeam] = useState('');
+  const [awayTeam, setAwayTeam] = useState('');
+  const [pick, setPick] = useState('');
+  const [reasoning, setReasoning] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -47,7 +62,11 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
       const data = await response.json();
       setArticle(data);
       setTitle(data.title);
-      setContent(data.content);
+      setGameDate(new Date(data.gameDate).toISOString().slice(0, 16));
+      setHomeTeam(data.homeTeam);
+      setAwayTeam(data.awayTeam);
+      setPick(data.pick);
+      setReasoning(data.reasoning);
       setImageUrl(data.imageUrl || '');
     } catch (error) {
       setError('Failed to load article');
@@ -69,7 +88,11 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
         },
         body: JSON.stringify({
           title,
-          content,
+          gameDate: new Date(gameDate).toISOString(),
+          homeTeam,
+          awayTeam,
+          pick,
+          reasoning,
           imageUrl,
         }),
       });
@@ -153,14 +176,71 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
             </div>
 
             <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700">
-                Content
+              <label htmlFor="gameDate" className="block text-sm font-medium text-gray-700">
+                Game Date
+              </label>
+              <input
+                type="datetime-local"
+                id="gameDate"
+                value={gameDate}
+                onChange={(e) => setGameDate(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="homeTeam" className="block text-sm font-medium text-gray-700">
+                  Home Team
+                </label>
+                <input
+                  type="text"
+                  id="homeTeam"
+                  value={homeTeam}
+                  onChange={(e) => setHomeTeam(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="awayTeam" className="block text-sm font-medium text-gray-700">
+                  Away Team
+                </label>
+                <input
+                  type="text"
+                  id="awayTeam"
+                  value={awayTeam}
+                  onChange={(e) => setAwayTeam(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="pick" className="block text-sm font-medium text-gray-700">
+                Our Pick
+              </label>
+              <input
+                type="text"
+                id="pick"
+                value={pick}
+                onChange={(e) => setPick(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="reasoning" className="block text-sm font-medium text-gray-700">
+                Reasoning
               </label>
               <textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={10}
+                id="reasoning"
+                value={reasoning}
+                onChange={(e) => setReasoning(e.target.value)}
+                rows={8}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 required
               />
