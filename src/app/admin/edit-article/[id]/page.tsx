@@ -30,7 +30,6 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
   const [awayTeam, setAwayTeam] = useState('');
   const [pick, setPick] = useState('');
   const [reasoning, setReasoning] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,7 +66,6 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
       setAwayTeam(data.awayTeam);
       setPick(data.pick);
       setReasoning(data.reasoning);
-      setImageUrl(data.imageUrl || '');
     } catch (error) {
       setError('Failed to load article');
       console.error('Error fetching article:', error);
@@ -93,7 +91,6 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
           awayTeam,
           pick,
           reasoning,
-          imageUrl,
         }),
       });
 
@@ -140,10 +137,10 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">Edit Article</h1>
           <button
-            onClick={() => router.push('/admin/manage-articles')}
+            onClick={() => router.push('/admin')}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
-            Back to Articles
+            Back to Dashboard
           </button>
         </div>
 
@@ -246,19 +243,6 @@ export default function EditArticle({ params }: { params: Promise<{ id: string }
               />
             </div>
 
-            <div>
-              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
-                Image URL (optional)
-              </label>
-              <input
-                type="url"
-                id="imageUrl"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
 
             <button
               type="submit"
