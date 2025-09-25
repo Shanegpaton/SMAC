@@ -765,6 +765,12 @@ export default function AdminPage() {
                         </td>
                         <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
+                          onClick={() => router.push(`/articles/${article.id}`)}
+                          className="text-green-600 hover:text-green-900 mr-4"
+                        >
+                          View Article
+                        </button>
+                        <button
                           onClick={() => handlePublishToggle(article.id, article.published)}
                           className={`mr-4 ${
                             article.published 
