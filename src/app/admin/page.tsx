@@ -995,7 +995,7 @@ export default function AdminPage() {
                           </td>
                           <td className="px-3 md:px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {pick.yield ? `${pick.yield}%` : '-'}
+                              {pick.yield ? `${pick.yield.toFixed(2)}%` : '-'}
                             </div>
                           </td>
                           <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium">

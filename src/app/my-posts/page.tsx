@@ -427,7 +427,7 @@ export default function MyPosts() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-900">
-                                {pick.result === 'push' ? 'Push' : pick.yield ? `${pick.yield}%` : '-'}
+                                {pick.result === 'push' ? 'Push' : pick.yield ? `${pick.yield.toFixed(2)}%` : '-'}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

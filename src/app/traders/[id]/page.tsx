@@ -228,7 +228,7 @@ export default function TraderProfile() {
                 <div>
                   <div className="text-sm text-gray-500">Total Yield</div>
                   <div className={`font-medium ${trader.totalYield >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {trader.totalYield}%
+                    {trader.totalYield.toFixed(2)}%
                   </div>
                 </div>
               </div>
@@ -347,7 +347,7 @@ export default function TraderProfile() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {pick.result === 'push' ? 'Push' : pick.yield ? `${pick.yield}%` : '-'}
+                              {pick.result === 'push' ? 'Push' : pick.yield ? `${pick.yield.toFixed(2)}%` : '-'}
                             </div>
                           </td>
                           {isAdmin && (

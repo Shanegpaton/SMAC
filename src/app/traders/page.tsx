@@ -135,7 +135,7 @@ export default function Traders() {
                     <div>
                       <div className="text-sm text-gray-500">Total Yield</div>
                       <div className={`font-medium ${trader.totalYield >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {trader.totalYield}%
+                        {trader.totalYield.toFixed(2)}%
                       </div>
                     </div>
                   </div>
