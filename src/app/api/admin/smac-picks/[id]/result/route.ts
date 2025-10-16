@@ -39,10 +39,14 @@ export async function PATCH(
       );
     }
 
-    const { result } = await request.json();
-    if (!result || !['win', 'loss', 'push'].includes(result)) {
+    const body = await request.json();
+    const resultInput = body?.result as string | null | undefined;
+    const result: 'win' | 'loss' | 'push' | null = (resultInput === '' || resultInput === null)
+      ? null
+      : (resultInput as 'win' | 'loss' | 'push');
+    if (result !== null && !['win', 'loss', 'push'].includes(result)) {
       return NextResponse.json(
-        { error: 'Invalid result. Must be either "win", "loss", or "push"' },
+        { error: 'Invalid result. Must be "win", "loss", "push", or empty for no result' },
         { status: 400 }
       );
     }
@@ -64,26 +68,28 @@ export async function PATCH(
       currentUserEmail: session.user.email
     });
 
-    // Calculate winnings and yield
+    // Calculate new result effects
     let winnings = 0;
-    let yieldAmount = 0;
+    let yieldAmount: number | null = null;
+    const profitFor = (odds: number, stake: number) =>
+      odds > 0
+        ? Math.floor((odds * stake) / 100)
+        : Math.floor((100 * stake) / Math.abs(odds));
 
     if (result === 'win') {
-      // For a win, user gets profit + original stake back
-      const profit = pick.odds > 0 
-        ? Math.floor((pick.odds * pick.smacCoins) / 100)
-        : Math.floor((100 * pick.smacCoins) / Math.abs(pick.odds));
+      const profit = profitFor(pick.odds, pick.smacCoins);
       winnings = profit + pick.smacCoins; // Profit + original stake
-      // Align yield calc with user SMAC picks: use exact percentage without flooring
       yieldAmount = pick.odds > 0 ? pick.odds : (100 * 100) / Math.abs(pick.odds);
     } else if (result === 'push') {
-      // For a push, user gets their original stake back
-      winnings = pick.smacCoins;
+      winnings = pick.smacCoins; // stake back
       yieldAmount = 0;
     } else if (result === 'loss') {
-      // For a loss, user gets nothing back
-      winnings = 0;
+      winnings = 0; // no return
       yieldAmount = -100;
+    } else {
+      // Clearing result: no winnings and no yield
+      winnings = 0;
+      yieldAmount = null;
     }
 
     console.log('Calculated values:', {
@@ -99,37 +105,32 @@ export async function PATCH(
 
     // Update the pick and user's SMAC coins in a transaction
     const updatedPick = await prisma.$transaction(async (tx) => {
+      // Determine delta to global based on previous vs new result
+      const prev: 'win' | 'loss' | 'push' | null = pick.result as any;
+      const amountFor = (r: string | null) => {
+        if (r === 'win') return profitFor(pick.odds, pick.smacCoins) + pick.smacCoins;
+        if (r === 'push') return pick.smacCoins;
+        return 0; // loss or null (no result)
+      };
+      const prevAmount = amountFor(prev);
+      const newAmount = amountFor(result);
+      const delta = newAmount - prevAmount;
+
       // Update the pick
       const updatedPick = await tx.sMACPick.update({
         where: { id: pick.id },
         data: {
-          result,
+          result: result,
           yield: yieldAmount,
         },
       });
 
-      if (result === 'win') {
-        // Global account gets stake + profit back
+      // Apply only the delta to the global pool
+      if (delta !== 0) {
         await tx.globalSMACCoins.update({
           where: { id: globalSMACCoins.id },
-          data: {
-            balance: {
-              increment: winnings // profit + stake
-            }
-          }
+          data: { balance: { increment: delta } },
         });
-      } else if (result === 'push') {
-        // Return stake to global account
-        await tx.globalSMACCoins.update({
-          where: { id: globalSMACCoins.id },
-          data: {
-            balance: {
-              increment: pick.smacCoins
-            }
-          }
-        });
-      } else if (result === 'loss') {
-        // Loss: stake was already deducted at creation; no further change
       }
 
       return updatedPick;
