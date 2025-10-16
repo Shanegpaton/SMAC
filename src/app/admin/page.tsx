@@ -999,28 +999,36 @@ export default function AdminPage() {
                             </div>
                           </td>
                           <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {!pick.result && (
-                            <div className="space-x-2">
-                              <button
-                                onClick={() => handleUpdateResult(pick.id, 'win')}
-                                className="text-green-600 hover:text-green-900"
-                              >
-                                Win
-                              </button>
-                              <button
-                                onClick={() => handleUpdateResult(pick.id, 'push')}
-                                className="text-blue-600 hover:text-blue-900"
-                              >
-                                Push
-                              </button>
-                              <button
-                                onClick={() => handleUpdateResult(pick.id, 'loss')}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                Loss
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex items-center space-x-4">
+                            {!pick.result && (
+                              <div className="space-x-2">
+                                <button
+                                  onClick={() => handleUpdateResult(pick.id, 'win')}
+                                  className="text-green-600 hover:text-green-900"
+                                >
+                                  Win
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateResult(pick.id, 'push')}
+                                  className="text-blue-600 hover:text-blue-900"
+                                >
+                                  Push
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateResult(pick.id, 'loss')}
+                                  className="text-red-600 hover:text-red-900"
+                                >
+                                  Loss
+                                </button>
+                              </div>
+                            )}
+                            <button
+                              onClick={() => router.push(`/admin/edit-global-smac-pick/${pick.id}`)}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              Edit
+                            </button>
+                          </div>
                         </td>
                       </tr>
                       ))}
