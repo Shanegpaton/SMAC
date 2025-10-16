@@ -74,7 +74,8 @@ export async function PATCH(
         ? Math.floor((pick.odds * pick.smacCoins) / 100)
         : Math.floor((100 * pick.smacCoins) / Math.abs(pick.odds));
       winnings = profit + pick.smacCoins; // Profit + original stake
-      yieldAmount = pick.odds > 0 ? pick.odds : Math.floor((100 * 100) / Math.abs(pick.odds));
+      // Align yield calc with user SMAC picks: use exact percentage without flooring
+      yieldAmount = pick.odds > 0 ? pick.odds : (100 * 100) / Math.abs(pick.odds);
     } else if (result === 'push') {
       // For a push, user gets their original stake back
       winnings = pick.smacCoins;
