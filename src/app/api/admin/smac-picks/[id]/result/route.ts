@@ -109,61 +109,27 @@ export async function PATCH(
       });
 
       if (result === 'win') {
-        // For a win, give user profit + original stake, and add profit to global balance
-        const profit = winnings - pick.smacCoins; // Extract just the profit portion
-        
-        await tx.user.update({
-          where: { id: pick.authorId },
-          data: {
-            smacCoins: {
-              increment: winnings // Profit + original stake
-            }
-          }
-        });
-
-        // Add only the profit to global balance (not the original stake)
+        // Global account gets stake + profit back
         await tx.globalSMACCoins.update({
           where: { id: globalSMACCoins.id },
           data: {
             balance: {
-              increment: profit
+              increment: winnings // profit + stake
             }
           }
         });
-
-        console.log('Updated balances for win:', {
-          userId: pick.authorId,
-          userOldBalance: pick.author.smacCoins,
-          userWinnings: winnings,
-          userNewBalance: pick.author.smacCoins + winnings,
-          globalOldBalance: globalSMACCoins.balance,
-          globalProfit: profit,
-          globalNewBalance: globalSMACCoins.balance + profit
-        });
       } else if (result === 'push') {
-        // For a push, give user their stake back, no global balance change
-        await tx.user.update({
-          where: { id: pick.authorId },
+        // Return stake to global account
+        await tx.globalSMACCoins.update({
+          where: { id: globalSMACCoins.id },
           data: {
-            smacCoins: {
+            balance: {
               increment: pick.smacCoins
             }
           }
         });
-
-        console.log('Returned stake to user for push:', {
-          userId: pick.authorId,
-          userOldBalance: pick.author.smacCoins,
-          stakeReturned: pick.smacCoins,
-          userNewBalance: pick.author.smacCoins + pick.smacCoins
-        });
       } else if (result === 'loss') {
-        // For a loss, user gets nothing, no global balance change
-        console.log('User lost their stake for loss:', {
-          userId: pick.authorId,
-          stakeLost: pick.smacCoins,
-          userBalance: pick.author.smacCoins
-        });
+        // Loss: stake was already deducted at creation; no further change
       }
 
       return updatedPick;
