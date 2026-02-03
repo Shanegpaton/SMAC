@@ -318,7 +318,7 @@ export default function MyPosts() {
                   onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                   className="px-3 py-2 border rounded-md"
                 >
-                  {[2025, 2024, 2023].map((year) => (
+                  {[2026, 2025, 2024, 2023].map((year) => (
                     <option key={year} value={year}>
                       {year}
                     </option>
