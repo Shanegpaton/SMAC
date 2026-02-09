@@ -5,16 +5,17 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const pick = await prisma.sMACPick.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: { author: { select: { id: true, name: true, email: true } } },
     });
 
