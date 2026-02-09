@@ -5,11 +5,12 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const article = await prisma.sMACArticle.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         author: {
           select: {
@@ -36,9 +37,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.isAdmin) {
@@ -61,7 +63,7 @@ export async function PUT(
     const parsedGameDate = new Date(gameDate);
 
     const article = await prisma.sMACArticle.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: {
         title,
         gameDate: parsedGameDate,
@@ -85,9 +87,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -99,7 +102,7 @@ export async function DELETE(
 
     // Check if the article exists and belongs to the user
     const article = await prisma.sMACArticle.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       select: { authorId: true }
     });
 
@@ -119,7 +122,7 @@ export async function DELETE(
     }
 
     await prisma.sMACArticle.delete({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
 
     return NextResponse.json({ success: true });

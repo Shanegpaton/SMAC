@@ -6,11 +6,12 @@ import { uploadImage } from '@/lib/uploadImage'; // Import the uploadImage funct
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const pick = await prisma.sMACArticle.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         author: {
           select: {
@@ -37,9 +38,10 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
@@ -50,7 +52,7 @@ export async function PATCH(
     }
 
     const pick = await prisma.SMACArticle.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
 
     if (!pick) {
@@ -68,7 +70,7 @@ export async function PATCH(
     console.log('📨 PATCH body:', body);
 
     const updated = await prisma.SMACArticle.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: {
         title: body.title,
         gameDate: body.gameDate ? new Date(body.gameDate) : undefined,
@@ -93,9 +95,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
@@ -106,7 +109,7 @@ export async function DELETE(
     }
 
     const pick = await prisma.sMACArticle.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
 
     if (!pick) {
@@ -121,7 +124,7 @@ export async function DELETE(
     }
 
     await prisma.sMACArticle.delete({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
 
     return NextResponse.json({ message: 'Pick deleted successfully' });
