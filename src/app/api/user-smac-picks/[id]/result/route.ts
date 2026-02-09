@@ -32,9 +32,10 @@ function calculateYield(result: string, odds: number, stake: number): number {
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -50,7 +51,7 @@ export async function PATCH(
 
     // Get the pick and ensure it exists
     const pick = await prisma.userSMACPick.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: { user: true }
     });
 
@@ -149,7 +150,7 @@ export async function PATCH(
     const updatedPick = await prisma.$transaction(async (tx) => {
       // Update the pick
       const updated = await tx.userSMACPick.update({
-        where: { id: params.id },
+        where: { id: resolvedParams.id },
         data: {
           result,
           yield: yieldAmount,
