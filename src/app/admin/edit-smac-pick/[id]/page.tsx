@@ -58,7 +58,8 @@ export default function EditSMACPick() {
 
       const response = await fetch(`/api/user-smac-picks/${pickId}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch pick');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch pick' }));
+        throw new Error(errorData.error || `Failed to fetch pick: ${response.status}`);
       }
 
       const pickData = await response.json();
