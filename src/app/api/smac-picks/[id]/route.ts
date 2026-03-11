@@ -35,9 +35,10 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.isAdmin) {
@@ -53,7 +54,7 @@ export async function PATCH(
 
     // Load pick with author for updates
     const existingPick = await prisma.sMACPick.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: { author: true },
     });
 
