@@ -2,6 +2,8 @@
 
 A full-stack web platform for the Sports Modeling & Analytics Club at Miami University. SMAC gives members a central place to publish sports analytics articles, submit and track picks, view trader profiles, and manage club engagement through a virtual SMAC coins system.
 
+Live app: [smacmu.com](https://smacmu.com)
+
 This project was built to support a real student organization, with authenticated member workflows, admin-managed content, and database-backed sports analytics features.
 
 ## Features
