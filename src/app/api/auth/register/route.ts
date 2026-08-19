@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
     const { name, email, password } = await req.json();
 
-    // Convert email to lowercase for consistency
-    const normalizedEmail = email.toLowerCase();
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email and password are required" },
+        { status: 400 }
+      );
+    }
 
-    // Check if user already exists
+    const normalizedEmail = email.toLowerCase().trim();
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
@@ -20,12 +27,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create new user
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         name,
         email: normalizedEmail,
-        password,
+        password: hashedPassword,
       },
     });
 

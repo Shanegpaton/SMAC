@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import bcrypt from 'bcryptjs';
 
 export default function Register() {
   const router = useRouter();
@@ -23,8 +22,6 @@ export default function Register() {
     const password = formData.get('password') as string;
 
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -33,7 +30,7 @@ export default function Register() {
         body: JSON.stringify({
           name,
           email,
-          password: hashedPassword,
+          password,
         }),
       });
 
@@ -62,9 +59,10 @@ export default function Register() {
           setTimeout(() => router.push('/auth/signin'), 2000);
         } else if (signInResult?.url) {
           // Successful auto sign-in, redirect to home page
+          const redirectUrl = signInResult.url;
           setSuccess('Account created and signed in successfully! Redirecting...');
           setTimeout(() => {
-            router.push(signInResult.url);
+            router.push(redirectUrl);
             router.refresh();
           }, 1000);
         }

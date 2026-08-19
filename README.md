@@ -126,7 +126,7 @@ npm run migrate   # Run the migration helper script
 - Built for an active student organization rather than as a standalone demo app.
 - Combines full-stack product work with user accounts, permissions, content workflows, and transactional updates.
 - Uses database indexes and relational modeling for member, article, pick, comment, and voting data.
-- Supports AI-assisted development workflows while keeping the product architecture and implementation review under human control.
+- Includes admin workflows for publishing, result updates, and weekly SMAC coin distribution.
 
 ## Future Improvements
 
